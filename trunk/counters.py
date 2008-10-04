@@ -31,7 +31,6 @@ class Counter(object):
         self.max_dt = max_delta_t
         self.max_rate = max_rate
         # Set up intitial state
-        ###self.data = []
         self.last_t = None
         self.last_v = None
         self.last_bucket_start = None
