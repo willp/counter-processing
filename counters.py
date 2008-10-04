@@ -31,7 +31,7 @@ class Counter(object):
         self.max_dt = max_delta_t
         self.max_rate = max_rate
         # Set up intitial state
-        self.data = []
+        ###self.data = []
         self.last_t = None
         self.last_v = None
         self.last_bucket_start = None
@@ -56,7 +56,6 @@ class Counter(object):
         if (v==0 and self.ignore_zeroes):
             # this has to evolve more
             raise StopIteration
-            ###return len(self.data)
         period = self.period
         this_bucket_start = t - (t  % period)
         dprint ("Timestamp: %d   Value: %d   ... this bucket is [[%d]]",  (t,  v,  this_bucket_start))
@@ -66,8 +65,6 @@ class Counter(object):
             self._store_last_sample (t, v)
             self.last_bucket_start = this_bucket_start
             raise StopIteration
-            #yield
-            ###return len(self.data)
         # skip bad data
         delta_t = t - self.last_t
         delta_v = v - self.last_v
@@ -75,8 +72,6 @@ class Counter(object):
             dprint ("  Warning, timestamp %d is invalid coming after previous timestamp %d. Ignoring this sample.",  (t,  self.last_t))
             self.count_bad_timestamps += 1
             raise StopIteration
-            #yield
-            ###return len(self.data)
         # possibly store last  t and v here? instead of everywhere else?
         if self.max_dt and (delta_t > self.max_dt):
             self.count_bad_timestamps += 1
@@ -85,8 +80,6 @@ class Counter(object):
             self._store_last_sample (t, v)
             self._new_bucket (this_bucket_start)
             raise StopIteration
-            #yield
-            ###return len(self.data)
         # initialized now, but handle counter wraps and resets (counter appears to go negative)
         if delta_v < 0:
             self.count_wraps += 1
@@ -94,8 +87,6 @@ class Counter(object):
             self._store_last_sample(t,  v)
             self._new_bucket (this_bucket_start)
             raise StopIteration
-            #yield
-            ###return len(self.data)
         self.count_samples += 1
         this_rate = delta_v / delta_t
         dprint ("  this rate is %.2f",  (this_rate))
@@ -104,8 +95,6 @@ class Counter(object):
             self._store_last_sample (t, v)
             self._new_bucket (this_bucket_start)
             raise StopIteration
-            #yield
-            ###return len(self.data)
         # handle case where we crossed into a new bucket
         if this_bucket_start != self.last_bucket_start:
             # first, determine how much coverage we have on the last bucket
@@ -125,7 +114,6 @@ class Counter(object):
                 dprint ("  [%d] B_percent: %.2f   B_val: %.2f  (weighted=%.2f)",  (self.last_bucket_start,  b_percent,  b_val,  weighted_val))
             dprint ("  [[%d]] rates summed to %.2f,  percentages summed to %.3f",  (self.last_bucket_start,  sum,  sum_percent))
             if (sum_percent >= self.permit_coverage):
-                ###self.data.append ( (self.last_bucket_start,  sum) )
                 yield ( self.last_bucket_start,  sum )
             else:
                 dprint ("ERROR: Skipped bucket [[%d]] which summed only to %.3f%%!",  (self.last_bucket_start,  sum_percent))
@@ -140,26 +128,17 @@ class Counter(object):
             overlap = t - this_bucket_start
             dprint ("  left over overlap = %d, in bucket %d",  (overlap,  this_bucket_start))
             bucket_coverage = overlap / period
-            ###???yield ( (this_rate,  bucket_coverage))
             self.bucket.append ( (this_rate,  bucket_coverage)) # could just be an accumulator
             # ok, handled previous buckets, whether they had data in them or not
             self._store_last_sample (t,  v)
             raise StopIteration
-            ###return len(self.data)
         if this_bucket_start == self.last_bucket_start:
             bucket_coverage = (t - self.last_t) / period
             dprint ("  Poll at timestamp %d (delta_t=%d) covers %.2f%% of NEW bucket %d with rate: %.2f",  (t,  delta_t,  (100*bucket_coverage),  this_bucket_start,  this_rate))
             self.bucket.append ( (this_rate,  bucket_coverage) )
         self._store_last_sample (t,  v)
         raise StopIteration
-        ###return len(self.data)
 
-    def get_rates(self):
-        """This method returns the stored data (and clears it) from a counter object. The result
-        is a list of tuples of (timestamp, rate).  Note that this method clears the stored contents."""
-        d = self.data
-        self.data = []
-        return d
 
 class Counter_NoInterpolation(object):
     def __init__(self,  period, skip_dupes=False,  permit_coverage=None,  ignore_zeroes=False):
