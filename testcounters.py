@@ -58,18 +58,15 @@ class TestValues(object):
                         random_variance = -random_variance
                 if self.time_variance == VARIANCE_NEGATIVE:
                     random_variance = -random_variance
-                time_variance = int(self.period*random_variance * self.avg_time_variance)
-                time_increment = self.period + time_variance
+                time_variance = int(self.period * random_variance * self.avg_time_variance)
+                if (time_variance <= -self.period): # clip negative time variance
+                    time_variance = self.period - 1 # ensure time variance never moves us backwards in time
+                time_increment += self.period + time_variance
                 #print "TDEBUG: time_increment is %d vs period of %d (variance=%d)" % (time_increment,  self.period,  time_variance)
         self.time += time_increment
         # Deal with counter value increasing
         if self.avg_rate_variance > 0:
-            random_variance = self.avg_rate_variance * random.random()
-            # ok, this code commented out just doesn't work... what was I thinking?
-            #if (random_variance < (self.avg_rate_variance/2)):
-            #    random_variance = 1 - random_variance
-            #else:
-            random_variance = 1 + random_variance
+            random_variance = 1 + self.avg_rate_variance * random.random()
             this_inc = self.period * self.avg_rate
             this_inc *= random_variance
             #print "DEBUG: Random_variance=%.3f  vs. this_inc= %f" % (random_variance,  this_inc)
@@ -77,7 +74,7 @@ class TestValues(object):
             #print "DEBUG: counter_increment=%d (vs %d)" % (counter_increment,  (self.avg_rate * time_increment ) )
         else:
             counter_increment = int(self.period * self.avg_rate)
-        print "TVdebug: counter increment is: %d" % (counter_increment)
+        print "TVdebug: counter increment is: %d, time increment is: %d" % (counter_increment,  time_increment)
         self.counter += counter_increment
         if (self.count > self.num):
             print "FINAL timestamp(2) time=%d and counter=%d" % (self.time,  self.counter)
