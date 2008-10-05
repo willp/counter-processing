@@ -264,14 +264,22 @@ print "\n"
 
 dprint = update_debug(False)
 print "Dataset 1 - ideal"
-dataset1 = TestValues (num=40,  period=60,  avg_time_variance=0.10, time_variance="both",  avg_rate=100)# ,  avg_rate_variance=0.20)
-c1 = Counter(period=60)
+# This is boilerplate for the most part!
+period = 60
+dataset1 = TestValues (num=4,  period=period,  avg_time_variance=0, time_variance="both",  gap_odds=0,  gap_avg_width=60*30, avg_rate=1,  avg_rate_variance=1000000,  random_seed=143)# ,  avg_rate_variance=0.20)
+c1 = Counter(period=period)
 r1 = []
+integrated_sum = 0
 for t, v in dataset1:
     for result in c1.new_count (t,  v):
-        print "R1_input: %d, %d" % (t,  v)
+        this_isum = result[1] * period
+        integrated_sum += this_isum
         r1.append (result)
-        print "R1: %20d: %8.2f" % result
+        print "RATE: %20d: %8.2f.  this_isum=%.4f, integrated_sum=%.4f" % (result[0], result[1],   this_isum,  integrated_sum)
+counter_sum = dataset1.counter
+print "Total counter rise: %d, and integrated sum is: %.4f" % (counter_sum,  integrated_sum)
+abs_error = abs(counter_sum - integrated_sum)
+print "Absolute Error is: %.25f, and percent error is: %.25f%%" % (abs_error,  abs_error/counter_sum * 100.0)
 print
 
 sys.exit()
@@ -289,8 +297,6 @@ print
 
 # Now perform the same experiment but using a random generator
 dprint = update_debug(False)
-
-1/0
 
 sum_count = 0
 v_sum = 0
