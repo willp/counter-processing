@@ -1,6 +1,11 @@
 #!/usr/bin/python
 from __future__ import division
+import sys
 from random import random
+
+# pollute local namespace to save time
+#from othercounters import *
+from testcounters import *
 
 def debug_print(str,  format_tuple):
     print str % format_tuple
@@ -16,6 +21,74 @@ def update_debug(state):
     return dprint
 
 dprint = update_debug(True)
+
+
+class Counter_NoInterpolation(object):
+    def __init__(self,  period, skip_dupes=False,  permit_coverage=None,  ignore_zeroes=False):
+        #deal with args
+        self.period = period
+        self.ignore_zeroes = ignore_zeroes
+        self.skip_dupes=skip_dupes
+        # Set up intitial state
+        self.data = []
+        self.last_t = None
+        self.last_v = None
+        # init stats
+        self.count_samples = 0
+        self.count_wraps = 0
+        self.count_bad_timestamps = 0
+
+    def new_count(self,  timestamp,  value):
+        # shorthand names for input args, and grab period into local var here
+        t = timestamp
+        v = value
+        if (v==0 and self.ignore_zeroes):
+            return len(self.data)
+        period = self.period
+        this_bucket_start = t - (t  % period)
+        dprint ("C2:Timestamp: %d   Value: %d   ... this bucket is [[%d]]",  (t,  v,  this_bucket_start))
+        # handle initialization
+        if self.last_t is None:
+            self.last_t = t
+            self.last_v = v
+            self.count_samples += 1
+            self.last_bucket_start = this_bucket_start
+            return len(self.data)
+        # skip bad data
+        delta_t = t - self.last_t
+        delta_v = v - self.last_v
+        if delta_t <= 0:
+            print "  C2: Warning, timestamp %d is invalid coming after previous timestamp %d. Ignoring this sample.",  (t,  self.last_t)
+            self.count_bad_timestamps += 1
+            return len(self.data)
+        self.last_t = t
+        self.last_v = v
+        if delta_v < 0:
+            print "  C2: Warning, counter reset or wrapped from value %d to %d in %d seconds", (self.last_v,  v,  delta_t)
+            self.last_bucket_start =this_bucket_start
+            self.count_wraps += 1
+            return len(self.data)
+        self.count_samples += 1
+        this_rate = delta_v / delta_t
+        dprint ("  C2: this rate is %.2f",  (this_rate))
+        self.data.append( (this_bucket_start,  this_rate)) # demonstrably wrong!
+        return (len(self.data))
+
+    def get_rates(self):
+        d = self.data
+        self.data = []
+        last_t = None
+        for i in d:
+            (t, v)=i
+            if last_t is not None:
+                if self.skip_dupes and t == last_t:
+                    continue
+                else:
+                    last_t = t
+            else:
+                last_t = t
+            yield (i)
+
 
 class Counter(object):
     def __init__(self,
@@ -110,7 +183,7 @@ class Counter(object):
                 weighted_val = b_val * b_percent
                 sum += weighted_val
                 sum_percent += b_percent
-                dprint ("  [%d] B_percent: %.2f   B_val: %.2f  (weighted=%.2f)",  (self.last_bucket_start,  b_percent,  b_val,  weighted_val))
+                ###dprint ("  [%d] B_percent: %.2f   B_val: %.2f  (weighted=%.2f)",  (self.last_bucket_start,  b_percent,  b_val,  weighted_val))
             dprint ("  [[%d]] rates summed to %.2f,  percentages summed to %.3f",  (self.last_bucket_start,  sum,  sum_percent))
             if (sum_percent >= self.permit_coverage):
                 yield ( self.last_bucket_start,  sum )
@@ -122,10 +195,10 @@ class Counter(object):
                 # generate rates for intermediate missing buckets
                 yield ( self.last_bucket_start,  this_rate )
                 ###self.data.append ( (self.last_bucket_start,  this_rate) )
-                dprint ("   skipped bucket %d had overall rate of %.2f (flat-interpolation/counters)",  (self.last_bucket_start,  this_rate))
+                dprint ("   flat-interpolated bucket %d had overall rate of %.2f (flat-interpolation/counters)",  (self.last_bucket_start,  this_rate))
                 self.last_bucket_start += period
             overlap = t - this_bucket_start
-            dprint ("  left over overlap = %d, in bucket %d",  (overlap,  this_bucket_start))
+            dprint ("  left over overlap = %d, in bucket %d (t=%d)",  (overlap,  this_bucket_start,  t))
             bucket_coverage = overlap / period
             self.bucket.append ( (this_rate,  bucket_coverage)) # could just be an accumulator
             # ok, handled previous buckets, whether they had data in them or not
@@ -189,8 +262,35 @@ print "Summed rate2: %.2f" % sum_rate2
 print rd2
 print "\n"
 
+dprint = update_debug(False)
+print "Dataset 1 - ideal"
+dataset1 = TestValues (num=40,  period=60,  avg_time_variance=0.10, time_variance="both",  avg_rate=100)# ,  avg_rate_variance=0.20)
+c1 = Counter(period=60)
+r1 = []
+for t, v in dataset1:
+    for result in c1.new_count (t,  v):
+        print "R1_input: %d, %d" % (t,  v)
+        r1.append (result)
+        print "R1: %20d: %8.2f" % result
+print
+
+sys.exit()
+
+print "Data set 8 simulation(?)"
+dataset8 = TestValues(num=40,  period=60,  avg_rate=100, avg_time_variance=0,    gap_odds=0.15, gap_avg_width=60*20)
+c8 = Counter(period=60)
+r8 = []
+for t, v in dataset8:
+    for result in c8.new_count (t,  v):
+        r8.append (result)
+        print "R8: %20d: %8.2f" % result
+print
+
+
 # Now perform the same experiment but using a random generator
 dprint = update_debug(False)
+
+1/0
 
 sum_count = 0
 v_sum = 0
@@ -209,9 +309,6 @@ for i in xrange(max_runs):
     ret = c.new_count(timestamp=t,  value=v_sum)
     ret2 = c2.new_count(timestamp=t,  value=v_sum)
     # if we generated a datapoint(s) (ret=True) then pull them out and put them in output[]
-    if (ret):
-        for t1,  v1 in c.get_rates():
-            output.append ( [t1, v1])
     if (ret2):
         for t1,  v1 in c2.get_rates():
             output2.append ( [t1, v1])
