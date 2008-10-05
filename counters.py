@@ -266,20 +266,28 @@ dprint = update_debug(False)
 print "Dataset 1 - ideal"
 # This is boilerplate for the most part!
 period = 60
-dataset1 = TestValues (num=400,  period=period,  avg_time_variance=0.50, time_variance="both",  gap_odds=0.05,  gap_avg_width=period*90, avg_rate=100,  avg_rate_variance=10,  random_seed=143)# ,  avg_rate_variance=0.20)
+dataset1 = TestValues (num=400,  period=period,  avg_time_variance=100, time_variance="both",  gap_odds=0.05,  gap_avg_width=period*60, avg_rate=144,  avg_rate_variance=0.5,  random_seed=143)# ,  avg_rate_variance=0.20)
 c1 = Counter(period=period)
 r1 = []
 integrated_sum = 0
+count_samples = 0
+count_rates = 0
 for t, v in dataset1:
-    for result in c1.new_count (t,  v):
-        this_isum = result[1] * period
+    count_samples+=1
+    for result_t,  result_rate in c1.new_count (t,  v):
+        this_isum = result_rate * period
         integrated_sum += this_isum
+        count_rates+=1
         # not really needed:  r1.append (result)
-        print "RATE: %20d: %8.2f.  this_isum=%.4f, integrated_sum=%.4f" % (result[0], result[1],   this_isum,  integrated_sum)
+        print "RATE: %20d: %8.2f" % (result_t, result_rate)
 counter_sum = dataset1.counter
+print "Completed processing %d input samples, and generated %d output rates." % (count_samples,  count_rates)
 print "Total counter rise: %d, and integrated sum is: %.4f" % (counter_sum,  integrated_sum)
 abs_error = abs(counter_sum - integrated_sum)
-print "Absolute Error is: %.25f, and percent error is: %.25f%%" % (abs_error,  abs_error/counter_sum * 100.0)
+if counter_sum > 0:
+    print "Absolute Error is: %.25f, and percent error is: %.25f%%" % (abs_error,  abs_error/counter_sum * 100.0)
+else:
+    print "Counter did not increase!  Error is zero.  (absolute error=%.25f)" % abs_error
 print
 
 sys.exit()
