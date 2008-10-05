@@ -291,6 +291,7 @@ else:
 print
 
 sys.exit()
+# CODE BELOW HERE IS JUNK!  DO NOT READ!
 
 print "Data set 8 simulation(?)"
 dataset8 = TestValues(num=40,  period=60,  avg_rate=100, avg_time_variance=0,    gap_odds=0.15, gap_avg_width=60*20)
