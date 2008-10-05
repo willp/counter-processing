@@ -126,7 +126,6 @@ class Counter(object):
             while self.last_bucket_start != this_bucket_start:
                 # generate rates for intermediate missing buckets
                 yield ( self.last_bucket_start,  this_rate )
-                ###self.data.append ( (self.last_bucket_start,  this_rate) )
                 dprint ("   flat-interpolated bucket %d had overall rate of %.2f (flat-interpolation/counters)",  (self.last_bucket_start,  this_rate))
                 self.last_bucket_start += period
             overlap = t - this_bucket_start
@@ -142,9 +141,6 @@ class Counter(object):
             self.bucket.append ( (this_rate,  bucket_coverage) )
         self._store_last_sample (t,  v)
         raise StopIteration
-
-
-
 
 # data that is supposed to be interval 60, but varies under-polled and overpolled
 # list: [ (timestamp, value), ... ]
@@ -189,44 +185,103 @@ for time, rate in rd2:
     sum_rate2 += (c_nointerp.period*rate)
 print "Summed rate1: %.2f" % sum_rate
 print rd
-print "\n"
+print
 print "Summed rate2: %.2f" % sum_rate2
 print rd2
-print "\n"
+print
 
 dprint = update_debug(False)
-print "Dataset 1 - ideal"
-# This is boilerplate for the most part!
-period = 60
-dataset1 = TestValues (num=400,  period=period,  avg_time_variance=100, time_variance="both",  gap_odds=0.05,  gap_avg_width=period*60, avg_rate=144,  avg_rate_variance=0.5,  random_seed=143)# ,  avg_rate_variance=0.20)
-c1 = Counter(period=period)
-r1 = []
-integrated_sum = 0
-count_samples = 0
-count_rates = 0
-for t, v in dataset1:
-    count_samples+=1
-    for result_t,  result_rate in c1.new_count (t,  v):
-        this_isum = result_rate * period
-        integrated_sum += this_isum
-        count_rates+=1
-        # not really needed:  r1.append (result)
-        print "RATE: %20d: %8.2f" % (result_t, result_rate)
-counter_sum = dataset1.counter
-print "Completed processing %d input samples, and generated %d output rates." % (count_samples,  count_rates)
-print "Total counter rise: %d, and integrated sum is: %.4f" % (counter_sum,  integrated_sum)
-abs_error = abs(counter_sum - integrated_sum)
-if counter_sum > 0:
-    print "Absolute Error is: %.25f, and percent error is: %.25f%%" % (abs_error,  abs_error/counter_sum * 100.0)
-else:
-    print "Counter did not increase!  Error is zero.  (absolute error=%.25f)" % abs_error
-print
+# This is boilerplate for the most part!  Turn it into a test framework
+
+def perform_test (data_generator,  test_name):
+    period = data_generator.period
+    c = Counter(period=period)
+    integrated_sum = 0
+    count_samples = 0
+    count_rates = 0
+    for t, v in data_generator:
+        count_samples+=1
+        for result_t,  result_rate in c.new_count (t,  v):
+            this_isum = result_rate * period
+            integrated_sum += this_isum
+            count_rates+=1
+    counter_sum = data_generator.get_rise()
+    print "%s] Processing total %d input samples, and generated %d output rates." % (test_name,  count_samples,  count_rates)
+    print "%s] Observed total counter rise: %d, and integrated sum is: %.2f" % (test_name,  counter_sum,  integrated_sum)
+    absolute_error = abs(counter_sum - integrated_sum)
+    percent_error = 0
+    if counter_sum > 0:
+        percent_error = absolute_error/counter_sum * 100.0
+        print "%s] Absolute Error is: %.25f.  Percent Error is: %.25f%%" % (test_name,  absolute_error,  percent_error)
+    else:
+        print "%s] Counter did not increase!  Error is zero.  (absolute error=%.25f)" % (test_name,  absolute_error)
+    print
+    return (absolute_error,  percent_error)
+
+# Now perform tests in the various contexts using the following constants
+period = 3600
+num=250000
+avg_rate=1
+
+dataset=TestData (num, period, avg_rate, random_seed=143)
+perform_test (dataset,  test_name="Data Set 1")
+
+dataset=TestData (num, period, avg_rate, random_seed=143, fixed_time_offset=int(period/2))
+perform_test (dataset,  test_name="Data Set 2")
+
+dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="negative",  avg_time_variance=0.10)
+perform_test (dataset,  test_name="Data Set 3")
+
+dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="positive",  avg_time_variance=0.50)
+perform_test (dataset,  test_name="Data Set 4")
+
+dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="both",  avg_time_variance=0.10)
+perform_test (dataset,  test_name="Data Set 5")
+
+dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="negative",  avg_time_variance=0.10)
+perform_test (dataset,  test_name="Data Set 6")
+
+print "Data Set 7]  -- not implemented yet\n"
+
+dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="negative",  avg_time_variance=0.10,  gap_odds=0.05,  gap_avg_width=period*45)
+perform_test (dataset,  test_name="Data Set 8")
+
+if 0:
+    dataset1 = TestData (num=num,  period=period,  avg_time_variance=0, time_variance="both",  gap_odds=0,  gap_avg_width=period*60, avg_rate=144,  avg_rate_variance=0,  random_seed=143)# ,  avg_rate_variance=0.20)
+    perform_test (dataset1,  test_name="Data Set 3")
+
+
+if 0:
+    c1 = Counter(period=period)
+    r1 = []
+    integrated_sum = 0
+    count_samples = 0
+    count_rates = 0
+    for t, v in dataset1:
+        count_samples+=1
+        for result_t,  result_rate in c1.new_count (t,  v):
+            this_isum = result_rate * period
+            integrated_sum += this_isum
+            count_rates+=1
+            # not really needed:  r1.append (result)
+            ###print "RATE: %20d: %8.2f" % (result_t, result_rate)
+    counter_sum = dataset1.counter
+    print "Completed processing %d input samples, and generated %d output rates." % (count_samples,  count_rates)
+    print "Total counter rise: %d, and integrated sum is: %.4f" % (counter_sum,  integrated_sum)
+    abs_error = abs(counter_sum - integrated_sum)
+    if counter_sum > 0:
+        print "Absolute Error is: %.25f, and percent error is: %.25f%%" % (abs_error,  abs_error/counter_sum * 100.0)
+    else:
+        print "Counter did not increase!  Error is zero.  (absolute error=%.25f)" % abs_error
+    print
+
+
 
 sys.exit()
 # CODE BELOW HERE IS JUNK!  DO NOT READ!
 
 print "Data set 8 simulation(?)"
-dataset8 = TestValues(num=40,  period=60,  avg_rate=100, avg_time_variance=0,    gap_odds=0.15, gap_avg_width=60*20)
+dataset8 = TestData(num=40,  period=60,  avg_rate=100, avg_time_variance=0,    gap_odds=0.15, gap_avg_width=60*20)
 c8 = Counter(period=60)
 r8 = []
 for t, v in dataset8:
