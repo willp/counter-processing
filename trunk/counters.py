@@ -4,7 +4,7 @@ import sys
 from random import random
 
 # pollute local namespace to save time
-#from othercounters import *
+from othercounters import *
 from testcounters import *
 
 def debug_print(str,  format_tuple):

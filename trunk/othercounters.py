@@ -1,4 +1,21 @@
 
+# Must factor this out- it's also in the main counters.py
+def debug_print(str,  format_tuple):
+    print str % format_tuple
+
+def no_print(*args):
+    pass
+
+def update_debug(state):
+    if (state):
+        dprint = debug_print
+    else:
+        dprint = no_print
+    return dprint
+
+dprint = update_debug(True)
+
+
 # This class needs to DIE - it's supposed to be the NAIVE implementation...
 class Counter_NoInterpolation(object):
     def __init__(self,  period, skip_dupes=False,  permit_coverage=None,  ignore_zeroes=False):
