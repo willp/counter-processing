@@ -7,7 +7,7 @@ VARIANCE_POSITIVE=2
 # and helper dictionary
 VARIANCE_ENUM = dict ( positive=VARIANCE_POSITIVE,  negative=VARIANCE_NEGATIVE,  both=VARIANCE_BOTH)
 
-class TestValues(object):
+class TestData(object):
     def __init__(self, num,  period, avg_rate,
                  random_seed=None, debug=False,
                  avg_time_variance=0, avg_rate_variance=0, time_variance="both",
@@ -19,6 +19,7 @@ class TestValues(object):
         self.avg_rate=avg_rate
         self.avg_rate_variance=avg_rate_variance
         self.gap_odds=gap_odds
+        self.fixed_time_offset = fixed_time_offset
         self.debug = debug
         if gap_odds > 0 and gap_avg_width is None:
             raise ValueError,  "Error, \"gap_odds\" is set to %.3f in constructor, but \"gap_avg_width\" is not specified!"
@@ -29,9 +30,8 @@ class TestValues(object):
             random.seed(random_seed)
         # initialize time
         self.time = start_time
-        self.time += fixed_time_offset
         # initialize counter
-        self.counter=counter_start
+        self.counter=counter_start + fixed_time_offset
 
     def next(self):
         if (self.count > self.num):
@@ -84,12 +84,15 @@ class TestValues(object):
             print "TV DEBUG[%d]:  timestamp=%d, counter=%d" % (self.count,  self.time,  self.counter)
         return (self.time,  self.counter)
 
+    def get_rise(self):
+        return self.counter - self.fixed_time_offset
+
     def __iter__(self):
         return self
 
 if __name__ == "__main__":
     print "\nTesting output:"
-    drift_poll = TestValues (num=1000,  period=60,  avg_time_variance=0,  avg_rate=100,  gap_odds=0.05, gap_avg_width=60*20 )
+    drift_poll = TestData (num=1000,  period=60,  avg_time_variance=0,  avg_rate=100,  gap_odds=0.05, gap_avg_width=60*20 )
     for t, c in drift_poll:
         print "%20d :  %12d" % (t,  c)
 
