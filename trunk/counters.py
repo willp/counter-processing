@@ -43,6 +43,8 @@ class Counter(object):
         # init stats
         self.count_samples = 0
         self.count_wraps = 0
+        self.skipped_delta_t=0
+        self.skipped_delta_v=0
         self.count_bad_timestamps = 0
 
     def _store_last_sample(self,  timestamp,  value):
@@ -79,6 +81,8 @@ class Counter(object):
         # possibly store last  t and v here? instead of everywhere else?
         if self.max_dt and (delta_t > self.max_dt):
             self.count_bad_timestamps += 1
+            self.skipped_delta_t += delta_t # track for later verification
+            self.skipped_delta_v += delta_v
             dprint ("  Warning, timestamp %d has delta_t of %d, which is larger than max permitted.",  (t,  delta_t))
             # and store this new (t,v) but do not calculate a rate
             self._store_last_sample (t, v)
@@ -220,13 +224,15 @@ def perform_test (data_generator,  test_name):
 # Now perform tests in the various contexts using the following constants
 period = 60
 num=25000
-avg_rate=3.1415926535
+avg_rate=10
 rs=143
 
+# i'm still looking for the worst-case input, something that will exercise the most IEEE rounding
+# in the generation or in the result processing
 dataset=TestData (num, period, avg_rate,
-                            time_variance="positive",  avg_time_variance=3.1415926535/avg_rate,
-                            gap_odds=0.10,  gap_avg_width=num,
-                            avg_rate_variance=3.1415926535*num*num,
+                            time_variance="positive",  avg_time_variance=0.5,
+                            gap_odds=0.15,  gap_avg_width=num,
+                            avg_rate_variance=12,
                             random_seed=rs)
 perform_test (dataset,  test_name="Data Set EVIL")
 
