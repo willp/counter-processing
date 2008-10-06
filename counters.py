@@ -217,8 +217,8 @@ def perform_test (data_generator,  test_name):
 
 # Now perform tests in the various contexts using the following constants
 period = 60
-num=2500
-avg_rate=3.1415926535/num/num
+num=25000
+avg_rate=3.1415926535
 rs=143
 
 dataset=TestData (num, period, avg_rate,
@@ -240,7 +240,7 @@ perform_test (dataset,  test_name="Data Set 3")
 dataset=TestData (num, period, avg_rate, time_variance="positive",  avg_time_variance=0.50, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 4")
 
-dataset=TestData (num, period, avg_rate, time_variance="both",  avg_time_variance=0.10, random_seed=rs)
+dataset=TestData (num, period, avg_rate, time_variance="both",  avg_time_variance=0.25, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 5")
 
 dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=rs)
@@ -251,103 +251,3 @@ print "Data Set 7]  -- not implemented yet\n"
 dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10,  gap_odds=0.05,  gap_avg_width=period*45, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 8")
 
-if 0:
-    c1 = Counter(period=period)
-    r1 = []
-    integrated_sum = 0
-    count_samples = 0
-    count_rates = 0
-    for t, v in dataset1:
-        count_samples+=1
-        for result_t,  result_rate in c1.new_count (t,  v):
-            this_isum = result_rate * period
-            integrated_sum += this_isum
-            count_rates+=1
-            # not really needed:  r1.append (result)
-            ###print "RATE: %20d: %8.2f" % (result_t, result_rate)
-    counter_sum = dataset1.counter
-    print "Completed processing %d input samples, and generated %d output rates." % (count_samples,  count_rates)
-    print "Total counter rise: %d, and integrated sum is: %.4f" % (counter_sum,  integrated_sum)
-    abs_error = abs(counter_sum - integrated_sum)
-    if counter_sum > 0:
-        print "Absolute Error is: %.25f, and percent error is: %.25f%%" % (abs_error,  abs_error/counter_sum * 100.0)
-    else:
-        print "Counter did not increase!  Error is zero.  (absolute error=%.25f)" % abs_error
-    print
-
-
-
-sys.exit()
-# CODE BELOW HERE IS JUNK!  DO NOT READ!
-
-print "Data set 8 simulation(?)"
-dataset8 = TestData(num=40,  period=60,  avg_rate=100, avg_time_variance=0,    gap_odds=0.15, gap_avg_width=60*20)
-c8 = Counter(period=60)
-r8 = []
-for t, v in dataset8:
-    for result in c8.new_count (t,  v):
-        r8.append (result)
-        print "R8: %20d: %8.2f" % result
-print
-
-
-# Now perform the same experiment but using a random generator
-dprint = update_debug(False)
-
-sum_count = 0
-v_sum = 0
-t = 0
-this_period = 60
-c = Counter(period=this_period)
-c2 = Counter_NoInterpolation(period=this_period)
-output = []
-output2 = []
-max_runs = 200000
-for i in xrange(max_runs):
-    # for first and last datapoint, do not increase v_sum (i.e. dont add to it)
-    if (max_runs-1) > i > 0:
-        v_increase = int(200*random())
-        v_sum += v_increase
-    ret = c.new_count(timestamp=t,  value=v_sum)
-    ret2 = c2.new_count(timestamp=t,  value=v_sum)
-    # if we generated a datapoint(s) (ret=True) then pull them out and put them in output[]
-    if (ret2):
-        for t1,  v1 in c2.get_rates():
-            output2.append ( [t1, v1])
-    # make the last datapoint land on a period-interval exactly to force a final sample
-    if i < (max_runs-1):
-        t_increase = 1 + int(this_period+3-3*random())
-    else:
-        t_increase = this_period - (t % this_period)
-    t += t_increase
-extra_sum = 0
-for b_r,  b_c in c.bucket:
-    extra_sum += b_c * b_r
-extra_sum *= c.period
-print "C1: done with %d random counter increases, extra_sum = %.2f" % (max_runs, extra_sum)
-sum_rate = 0
-count_rate =0
-for time, rate in output:
-    sum_rate += (c.period * rate)
-    count_rate += 1
-avg_rate = sum_rate / count_rate
-print "C1: queued up rates (count_rate=%d) add up to %.25f, but avg rate is %.25f" % (count_rate,  sum_rate,  avg_rate)
-sum_rate += extra_sum
-error = abs(sum_rate - v_sum)
-error_rate = error / max_runs * 100
-print "C1: Total converted rate sum is %.3f over %d counter updates and total counter sum is %d, Error=%.25f, error percent is: %.20f%%" % (sum_rate,  c.count_samples,  v_sum,  error,  error_rate)
-
-print
-
-# make function!
-# no bucket for c2, skip extra_sum
-sum_rate2 = 0
-count_rate2 =0
-for time, rate in output2:
-    sum_rate2 += (c2.period * rate)
-    count_rate2 += 1
-avg_rate2 = sum_rate2 / count_rate2
-print "C2: queued up rates (count_rate=%d) add up to %.25f, but avg rate is %.25f" % (count_rate2,  sum_rate2,  avg_rate2)
-error2 = abs(sum_rate2 - v_sum)
-error_rate2 = error2 / max_runs * 100
-print "C2: Total converted rate sum is %.3f over %d counter updates and total counter sum is %d, Error=%.25f, error percent is: %.20f%%" % (sum_rate2,  c2.count_samples,  v_sum,  error2,  error_rate2)
