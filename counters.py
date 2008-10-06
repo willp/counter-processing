@@ -202,9 +202,11 @@ def perform_test (data_generator,  test_name):
             this_isum = result_rate * period
             integrated_sum += this_isum
             count_rates+=1
+        # send counter to any additional processing algorithms here!
+        # JWP
     counter_sum = data_generator.get_rise()
-    print "%s] Processing total %d input samples, and generated %d output rates." % (test_name,  count_samples,  count_rates)
-    print "%s] Observed total counter rise: %d, and integrated sum is: %.2f" % (test_name,  counter_sum,  integrated_sum)
+    print "%s] Processing total %d input samples generated %d output rates." % (test_name,  count_samples,  count_rates)
+    print "%s] Observed total counter rise: %d, and integrated-sum is: %.25f" % (test_name,  counter_sum,  integrated_sum)
     absolute_error = abs(counter_sum - integrated_sum)
     percent_error = 0
     if counter_sum > 0:
