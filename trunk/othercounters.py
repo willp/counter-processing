@@ -1,3 +1,4 @@
+from __future__ import division
 
 # Must factor this out- it's also in the main counters.py
 def debug_print(str,  format_tuple):
