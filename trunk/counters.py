@@ -115,7 +115,7 @@ class Counter(object):
                 weighted_val = b_val * b_percent
                 sum += weighted_val
                 sum_percent += b_percent
-                ###dprint ("  [%d] B_percent: %.2f   B_val: %.2f  (weighted=%.2f)",  (self.last_bucket_start,  b_percent,  b_val,  weighted_val))
+                dprint ("  [%d] B_percent: %.2f   B_val: %.2f  (weighted=%.2f)",  (self.last_bucket_start,  b_percent,  b_val,  weighted_val))
             dprint ("  [[%d]] rates summed to %.2f,  percentages summed to %.3f",  (self.last_bucket_start,  sum,  sum_percent))
             if (sum_percent >= self.permit_coverage):
                 yield ( self.last_bucket_start,  sum )
@@ -219,9 +219,16 @@ def perform_test (data_generator,  test_name):
     return (absolute_error,  percent_error)
 
 # Now perform tests in the various contexts using the following constants
-period = 3600
+period = 60
 num=250000
-avg_rate=1
+avg_rate=921500
+
+dataset=TestData (num, period, avg_rate,
+                            time_variance="both",  avg_time_variance=0,
+                            gap_odds=0.90,  gap_avg_width=period*200,
+                            avg_rate_variance=0,
+                            random_seed=143)
+perform_test (dataset,  test_name="Data Set EVIL")
 
 dataset=TestData (num, period, avg_rate, random_seed=143)
 perform_test (dataset,  test_name="Data Set 1")
