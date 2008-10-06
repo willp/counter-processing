@@ -170,11 +170,8 @@ rd2=[]
 for t, v in polled_data: # this turns into the function call to generate this dataset
         for result in c.new_count (t,  v):
             rd.append (result)
-        ret2 = c_nointerp.new_count(t, v)
-        if ret2:
-            for t, v in c_nointerp.get_rates():
-                rd2.append ( [t, v])
-
+        for result in c_nointerp.new_count (t,  v):
+            rd2.append (result)
 
 # check the integrated value
 sum_rate = 0
@@ -220,43 +217,39 @@ def perform_test (data_generator,  test_name):
 
 # Now perform tests in the various contexts using the following constants
 period = 60
-num=250000
-avg_rate=921500
+num=2500
+avg_rate=3.1415926535/num/num
+rs=143
 
 dataset=TestData (num, period, avg_rate,
-                            time_variance="both",  avg_time_variance=0,
-                            gap_odds=0.90,  gap_avg_width=period*200,
-                            avg_rate_variance=0,
-                            random_seed=143)
+                            time_variance="positive",  avg_time_variance=3.1415926535/avg_rate,
+                            gap_odds=0.10,  gap_avg_width=num,
+                            avg_rate_variance=3.1415926535*num*num,
+                            random_seed=rs)
 perform_test (dataset,  test_name="Data Set EVIL")
 
-dataset=TestData (num, period, avg_rate, random_seed=143)
+dataset=TestData (num, period, avg_rate, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 1")
 
-dataset=TestData (num, period, avg_rate, fixed_time_offset=int(period/2), random_seed=143)
+dataset=TestData (num, period, avg_rate, fixed_time_offset=int(period/2), random_seed=rs)
 perform_test (dataset,  test_name="Data Set 2")
 
-dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=143)
+dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 3")
 
-dataset=TestData (num, period, avg_rate, time_variance="positive",  avg_time_variance=0.50, random_seed=143)
+dataset=TestData (num, period, avg_rate, time_variance="positive",  avg_time_variance=0.50, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 4")
 
-dataset=TestData (num, period, avg_rate, time_variance="both",  avg_time_variance=0.10, random_seed=143)
+dataset=TestData (num, period, avg_rate, time_variance="both",  avg_time_variance=0.10, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 5")
 
-dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=143)
+dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 6")
 
 print "Data Set 7]  -- not implemented yet\n"
 
-dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10,  gap_odds=0.05,  gap_avg_width=period*45, random_seed=143)
+dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10,  gap_odds=0.05,  gap_avg_width=period*45, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 8")
-
-if 0:
-    dataset1 = TestData (num=num,  period=period,  avg_time_variance=0, time_variance="both",  gap_odds=0,  gap_avg_width=period*60, avg_rate=144,  avg_rate_variance=0,  random_seed=143)# ,  avg_rate_variance=0.20)
-    perform_test (dataset1,  test_name="Data Set 3")
-
 
 if 0:
     c1 = Counter(period=period)
