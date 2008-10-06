@@ -226,24 +226,24 @@ avg_rate=1
 dataset=TestData (num, period, avg_rate, random_seed=143)
 perform_test (dataset,  test_name="Data Set 1")
 
-dataset=TestData (num, period, avg_rate, random_seed=143, fixed_time_offset=int(period/2))
+dataset=TestData (num, period, avg_rate, fixed_time_offset=int(period/2), random_seed=143)
 perform_test (dataset,  test_name="Data Set 2")
 
-dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="negative",  avg_time_variance=0.10)
+dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=143)
 perform_test (dataset,  test_name="Data Set 3")
 
-dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="positive",  avg_time_variance=0.50)
+dataset=TestData (num, period, avg_rate, time_variance="positive",  avg_time_variance=0.50, random_seed=143)
 perform_test (dataset,  test_name="Data Set 4")
 
-dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="both",  avg_time_variance=0.10)
+dataset=TestData (num, period, avg_rate, time_variance="both",  avg_time_variance=0.10, random_seed=143)
 perform_test (dataset,  test_name="Data Set 5")
 
-dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="negative",  avg_time_variance=0.10)
+dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=143)
 perform_test (dataset,  test_name="Data Set 6")
 
 print "Data Set 7]  -- not implemented yet\n"
 
-dataset=TestData (num, period, avg_rate, random_seed=143, time_variance="negative",  avg_time_variance=0.10,  gap_odds=0.05,  gap_avg_width=period*45)
+dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10,  gap_odds=0.05,  gap_avg_width=period*45, random_seed=143)
 perform_test (dataset,  test_name="Data Set 8")
 
 if 0:
