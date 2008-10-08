@@ -42,7 +42,7 @@ class Counter_NoInterpolation(object):
             raise StopIteration
         period = self.period
         this_bucket_start = t - (t  % period)
-        dprint ("C2:Timestamp: %d   Value: %d   ... this bucket is [[%d]]",  (t,  v,  this_bucket_start))
+        ###dprint ("C2:Timestamp: %d   Value: %d   ... this bucket is [[%d]]",  (t,  v,  this_bucket_start))
         # handle initialization
         if self.last_t is None:
             self.last_t = t
@@ -55,21 +55,21 @@ class Counter_NoInterpolation(object):
         delta_t = t - self.last_t
         delta_v = v - self.last_v
         if delta_t <= 0:
-            print "  C2: Warning, timestamp %d is invalid coming after previous timestamp %d. Ignoring this sample.",  (t,  self.last_t)
+            ###print "  C2: Warning, timestamp %d is invalid coming after previous timestamp %d. Ignoring this sample.",  (t,  self.last_t)
             self.count_bad_timestamps += 1
             raise StopIteration
             #return len(self.data)
         self.last_t = t
         self.last_v = v
         if delta_v < 0:
-            print "  C2: Warning, counter reset or wrapped from value %d to %d in %d seconds", (self.last_v,  v,  delta_t)
+            ###print "  C2: Warning, counter reset or wrapped from value %d to %d in %d seconds", (self.last_v,  v,  delta_t)
             self.last_bucket_start =this_bucket_start
             self.count_wraps += 1
             raise StopIteration
             #return len(self.data)
         self.count_samples += 1
         this_rate = delta_v / delta_t
-        dprint ("  C2: this rate is %.2f",  (this_rate))
+        ###dprint ("  C2: this rate is %.2f",  (this_rate))
         #self.data.append( (this_bucket_start,  this_rate)) # demonstrably wrong!
         yield (this_bucket_start,  this_rate)
         raise StopIteration
