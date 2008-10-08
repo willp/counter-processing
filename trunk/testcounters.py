@@ -10,11 +10,11 @@ VARIANCE_ENUM = dict ( positive=VARIANCE_POSITIVE,  negative=VARIANCE_NEGATIVE, 
 class TestData(object):
     def __init__(self, num,  period, avg_rate,
                  random_seed=None, debug=False,
-                 avg_time_variance=0, avg_rate_variance=0, time_variance="both",
+                 max_time_variance=0, avg_rate_variance=0, time_variance="both",
                  start_time=0, fixed_time_offset=0, gap_odds=0,  gap_avg_width=None, counter_start=0):
         self.num=num
         self.period=period
-        self.avg_time_variance=avg_time_variance
+        self.max_time_variance=max_time_variance
         self.time_variance=VARIANCE_ENUM[time_variance]
         self.avg_rate=avg_rate
         self.avg_rate_variance=avg_rate_variance
@@ -53,18 +53,20 @@ class TestData(object):
                 time_increment += gap_width
                 if self.debug: print "GAP OCCURRED: WIDTH: %d seconds  (from %d to %d)" % (gap_width,  self.time,  self.time+time_increment)
             # Now handle polling variance
-            if self.avg_time_variance > 0:
+            if self.max_time_variance > 0:
                 random_variance = random.random()
                 if self.time_variance == VARIANCE_BOTH:
                     if (random_variance < 0.5):
                         random_variance = -random_variance
                 if self.time_variance == VARIANCE_NEGATIVE:
                     random_variance = -random_variance
-                time_variance = int(self.period * random_variance * self.avg_time_variance)
+                time_variance = int(self.period * random_variance * self.max_time_variance)
                 # clip negative time variance to ensure time variance never moves us backwards in time
                 if (time_variance <= -self.period):
                     time_variance = self.period - 1
-                time_increment += self.period + time_variance
+                #print "TIME VARIANCE: %d" % time_variance
+                time_increment += time_variance # + self.period
+        ###print ">>> Increasing self.time (%d) to (%d) by increment of %d" % (self.time,  self.time+time_increment,  time_increment)
         self.time += time_increment
         # Deal with counter value increasing
         if self.avg_rate_variance > 0:
@@ -92,7 +94,7 @@ class TestData(object):
 
 if __name__ == "__main__":
     print "\nTesting output:"
-    drift_poll = TestData (num=1000,  period=60,  avg_time_variance=0,  avg_rate=100,  gap_odds=0.05, gap_avg_width=60*20 )
+    drift_poll = TestData (num=1000,  period=60,  max_time_variance=0,  avg_rate=100,  gap_odds=0.05, gap_avg_width=60*20 )
     for t, c in drift_poll:
         print "%20d :  %12d" % (t,  c)
 
