@@ -88,7 +88,7 @@ class Counter(object):
             self._store_last_sample (t, v)
             self._new_bucket (this_bucket_start)
             raise StopIteration
-        # initialized now, but handle counter wraps and resets (counter appears to go negative)
+        # handle counter wraps and resets (counter appears to go negative)
         if delta_v < 0:
             self.count_wraps += 1
             dprint ("  Warning, counter reset or wrapped from value %d to %d in %d seconds",  (self.last_v,  v,  delta_t))
@@ -119,8 +119,8 @@ class Counter(object):
                 weighted_val = b_val * b_percent
                 sum += weighted_val
                 sum_percent += b_percent
-                dprint ("  [%d] B_percent: %.2f   B_val: %.2f  (weighted=%.2f)",  (self.last_bucket_start,  b_percent,  b_val,  weighted_val))
-            dprint ("  [[%d]] rates summed to %.2f,  percentages summed to %.3f",  (self.last_bucket_start,  sum,  sum_percent))
+                dprint ("  [%d] B_percent: %.4f   B_val: %.2f  (weighted=%.2f)",  (self.last_bucket_start,  b_percent,  b_val,  weighted_val))
+            dprint ("  [[%d]] percentages summed to %.4f,   rates summed to %.2f",  (self.last_bucket_start, sum_percent, sum))
             if (sum_percent >= self.permit_coverage):
                 yield ( self.last_bucket_start,  sum )
             else:
@@ -133,9 +133,10 @@ class Counter(object):
                 dprint ("   flat-interpolated bucket %d had overall rate of %.2f (flat-interpolation/counters)",  (self.last_bucket_start,  this_rate))
                 self.last_bucket_start += period
             overlap = t - this_bucket_start
-            dprint ("  left over overlap = %d, in bucket %d (t=%d)",  (overlap,  this_bucket_start,  t))
-            bucket_coverage = overlap / period
-            self.bucket.append ( (this_rate,  bucket_coverage)) # could just be an accumulator
+            if overlap > 0:
+                dprint ("  left over overlap = %d, in bucket %d (t=%d)",  (overlap,  this_bucket_start,  t))
+                bucket_coverage = overlap / period
+                self.bucket.append ( (this_rate,  bucket_coverage)) # could just be an accumulator
             # ok, handled previous buckets, whether they had data in them or not
             self._store_last_sample (t,  v)
             raise StopIteration
@@ -224,15 +225,15 @@ def perform_test (data_generator,  test_name):
 # Now perform tests in the various contexts using the following constants
 period = 60
 num=25000
-avg_rate=10
+avg_rate=13
 rs=143
 
 # i'm still looking for the worst-case input, something that will exercise the most IEEE rounding
 # in the generation or in the result processing
 dataset=TestData (num, period, avg_rate,
-                            time_variance="positive",  avg_time_variance=0.5,
-                            gap_odds=0.15,  gap_avg_width=num,
-                            avg_rate_variance=12,
+                            time_variance="both",  max_time_variance=0.99,
+                            gap_odds=0.05,  gap_avg_width=50,
+                            avg_rate_variance=120002.5,
                             random_seed=rs)
 perform_test (dataset,  test_name="Data Set EVIL")
 
@@ -242,20 +243,21 @@ perform_test (dataset,  test_name="Data Set 1")
 dataset=TestData (num, period, avg_rate, fixed_time_offset=int(period/2), random_seed=rs)
 perform_test (dataset,  test_name="Data Set 2")
 
-dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=rs)
+#dprint = update_debug(True)
+dataset=TestData (num, period, avg_rate, time_variance="positive",  max_time_variance=0.20, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 3")
+#dprint = update_debug(False)
 
-dataset=TestData (num, period, avg_rate, time_variance="positive",  avg_time_variance=0.50, random_seed=rs)
+dataset=TestData (num, period, avg_rate, time_variance="positive",  max_time_variance=2.0, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 4")
 
-dataset=TestData (num, period, avg_rate, time_variance="both",  avg_time_variance=0.25, random_seed=rs)
+dataset=TestData (num, period, avg_rate, time_variance="both",  max_time_variance=0.50, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 5")
 
-dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10, random_seed=rs)
+dataset=TestData (num, period, avg_rate, time_variance="negative",  max_time_variance=0.20, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 6")
 
 print "Data Set 7]  -- not implemented yet\n"
 
-dataset=TestData (num, period, avg_rate, time_variance="negative",  avg_time_variance=0.10,  gap_odds=0.05,  gap_avg_width=period*45, random_seed=rs)
+dataset=TestData (num, period, avg_rate, time_variance="negative",  max_time_variance=0.10,  gap_odds=0.05,  gap_avg_width=period*45, random_seed=rs)
 perform_test (dataset,  test_name="Data Set 8")
-
