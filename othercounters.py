@@ -20,7 +20,7 @@ dprint = update_debug(True)
 
 # This class needs to DIE - it's supposed to be the NAIVE implementation...
 class Counter_NoInterpolation(object):
-    def __init__(self,  period, skip_dupes = False,  permit_coverage = None,  ignore_zeroes = False):
+    def __init__(self,  period, skip_dupes=False,  permit_coverage=None,  ignore_zeroes=False):
         #deal with args
         self.period = period
         self.ignore_zeroes = ignore_zeroes

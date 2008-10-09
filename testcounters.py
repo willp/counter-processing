@@ -9,9 +9,9 @@ VARIANCE_ENUM = dict(positive = VARIANCE_POSITIVE, negative = VARIANCE_NEGATIVE,
 
 class TestData(object):
     def __init__(self, num,  period, avg_rate,
-                 random_seed = None, debug = False,
-                 max_time_variance = 0, avg_rate_variance = 0, time_variance = "both",
-                 start_time = 0, fixed_time_offset = 0, gap_odds = 0,  gap_avg_width = None, counter_start = 0):
+                 random_seed=None, debug=False,
+                 max_time_variance=0, avg_rate_variance=0, time_variance="both",
+                 start_time=0, fixed_time_offset=0, gap_odds=0,  gap_avg_width=None, counter_start=0):
         self.num = num
         self.period = period
         self.max_time_variance = max_time_variance
