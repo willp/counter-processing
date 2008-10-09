@@ -1,5 +1,6 @@
 from __future__ import division
 
+
 # Must factor this out- it's also in the main counters.py
 def debug_print(str,  format_tuple):
     print str % format_tuple
@@ -8,7 +9,7 @@ def no_print(*args):
     pass
 
 def update_debug(state):
-    if (state):
+    if state:
         dprint = debug_print
     else:
         dprint = no_print
@@ -19,11 +20,11 @@ dprint = update_debug(True)
 
 # This class needs to DIE - it's supposed to be the NAIVE implementation...
 class Counter_NoInterpolation(object):
-    def __init__(self,  period, skip_dupes=False,  permit_coverage=None,  ignore_zeroes=False):
+    def __init__(self,  period, skip_dupes = False,  permit_coverage = None,  ignore_zeroes = False):
         #deal with args
         self.period = period
         self.ignore_zeroes = ignore_zeroes
-        self.skip_dupes=skip_dupes
+        self.skip_dupes = skip_dupes
         # Set up intitial state
         self.data = []
         self.last_t = None
@@ -37,12 +38,10 @@ class Counter_NoInterpolation(object):
         # shorthand names for input args, and grab period into local var here
         t = timestamp
         v = value
-        if (v==0 and self.ignore_zeroes):
-            #return len(self.data)
+        if v==0 and self.ignore_zeroes:
             raise StopIteration
         period = self.period
         this_bucket_start = t - (t  % period)
-        ###dprint ("C2:Timestamp: %d   Value: %d   ... this bucket is [[%d]]",  (t,  v,  this_bucket_start))
         # handle initialization
         if self.last_t is None:
             self.last_t = t
@@ -50,43 +49,19 @@ class Counter_NoInterpolation(object):
             self.count_samples += 1
             self.last_bucket_start = this_bucket_start
             raise StopIteration
-            #return len(self.data)
         # skip bad data
         delta_t = t - self.last_t
         delta_v = v - self.last_v
         if delta_t <= 0:
-            ###print "  C2: Warning, timestamp %d is invalid coming after previous timestamp %d. Ignoring this sample.",  (t,  self.last_t)
             self.count_bad_timestamps += 1
             raise StopIteration
-            #return len(self.data)
         self.last_t = t
         self.last_v = v
         if delta_v < 0:
-            ###print "  C2: Warning, counter reset or wrapped from value %d to %d in %d seconds", (self.last_v,  v,  delta_t)
-            self.last_bucket_start =this_bucket_start
+            self.last_bucket_start = this_bucket_start
             self.count_wraps += 1
             raise StopIteration
-            #return len(self.data)
         self.count_samples += 1
         this_rate = delta_v / delta_t
-        ###dprint ("  C2: this rate is %.2f",  (this_rate))
-        #self.data.append( (this_bucket_start,  this_rate)) # demonstrably wrong!
         yield (this_bucket_start,  this_rate)
         raise StopIteration
-        #return (len(self.data))
-
-    def get_rates_DISABLED(self):
-        d = self.data
-        self.data = []
-        last_t = None
-        for i in d:
-            (t, v)=i
-            if last_t is not None:
-                if self.skip_dupes and t == last_t:
-                    continue
-                else:
-                    last_t = t
-            else:
-                last_t = t
-            yield (i)
-
