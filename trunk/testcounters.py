@@ -1,5 +1,8 @@
 import random
 
+__version__ = "$Revision: 0 $"
+# $Source$
+
 # enum with constants and helper dictionary
 VARIANCE_BOTH = 0
 VARIANCE_NEGATIVE = 1

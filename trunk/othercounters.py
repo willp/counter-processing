@@ -1,5 +1,8 @@
 from __future__ import division
 
+__version__ = "$Revision: 0 $"
+# $Source$
+
 
 # Must factor this out- it's also in the main counters.py
 def debug_print(str,  format_tuple):

@@ -2,6 +2,10 @@
 from __future__ import division
 import sys
 
+__version__ = "$Revision: 0 $"
+# $Source$
+
+
 # pollute local namespace to save time
 from othercounters import *
 from testcounters import *
