@@ -26,6 +26,7 @@ sub _new_bucket {
 
 sub _bucket_append {
     my ($self, $rate, $percent) = @_;
+    print "Bucket add: $rate covers " . 100.0*$percent . " percent of interval\n";
     push (@{ $self->{'bucket'} }, [ $rate, $percent ] );
 }
 
@@ -88,7 +89,7 @@ sub new_count {
 	$self->{'stats'}->{'count_rate_too_large'}++;
 	$self->_store_last_sample($timestamp, $val);
 	$self->_new_bucket($this_bucket_start);
-	return ($results, undef);
+	return ($results, $res_ref);
     }
     # should be a "while" loop here I think... to convert from generator semantics
     if ($this_bucket_start != $self->{'last_bucket_start'}) {
