@@ -1,12 +1,26 @@
-package CounterProcessing;
+package Counter;
+my $C_PERIOD = ;
+my $C_STATS  = ;
+my $C_PERMIT_COVERAGE = ;
+my $C_LAST_T = ;
+my $C_LAST_V = ;
+my $C_BUCKET = ;
+my $C_LAST_BUCKET_START = ;
+my $C_RESULTS = ;
+my $C_MAX_DELTA_T = ;
+my $C_MAX_RATE = ;
+
 sub new {
     my $this = shift;
     my %args = @_;
     my $class = ref($this) || $this;
-    my $self = {};
+    my $self = {}; # maybe I should use an array reference to lessen memory usage?
+    my %Stats;
 
+    # not much constructor validation here
     $self->{'period'} = delete($args{'period'});
     $self->{'permit_coverage'} = delete($args{'permit_coverage'});
+    $self->{'stats'} = delete($args{'stats'}) || \%Stats; # permit inbound hashref
 
     bless ($self, $class);
     return ($self);
@@ -26,7 +40,7 @@ sub _new_bucket {
 
 sub _bucket_append {
     my ($self, $rate, $percent) = @_;
-    print "Bucket add: $rate covers " . 100.0*$percent . " percent of interval\n";
+    #print "Bucket add: $rate covers " . 100.0*$percent . " percent of interval\n";
     push (@{ $self->{'bucket'} }, [ $rate, $percent ] );
 }
 
@@ -35,7 +49,6 @@ sub _keep_result {
     if (! defined ($self->{'results'})) {
 	$self->{'results'} = [];
     }
-    #print "KEPT RESULT: $timestamp, $val\n";
     push (@{ $self->{'results'} }, [ $timestamp, $val ]);
 }
 
@@ -52,11 +65,12 @@ sub new_count {
     my ($self, $timestamp, $val) = @_;
     my $period = $self->{'period'};
     my ($results, $res_ref) = $self->results();
+    my $stats_ref = $self->{'stats'};
 
     my $this_bucket_start = $timestamp - ($timestamp % $period);
 
     if (! defined($self->{'last_t'})) {
-	$self->{'stats'}->{'count_samples'}++;
+	$stats_ref->{'count_samples'}++;
 	$self->{'last_bucket_start'} = $this_bucket_start;
 	$self->_store_last_sample($timestamp, $val);
 	return ($results, $res_ref);
@@ -64,29 +78,29 @@ sub new_count {
     my $delta_t = $timestamp - $self->{'last_t'};
     my $delta_v = $val - $self->{'last_v'};
     if ($delta_t <= 0) {
-	$self->{'stats'}->{'count_bad_timestamps'}++;
+	$stats_ref->{'count_bad_timestamps'}++;
 	return ($results, $res_ref);
     }
     if (defined (my $max_delta_t = $self->{'max_delta_t'}) &&
 	$delta_t > $max_delta_t) {
-	$self->{'stats'}->{'skipped_delta_t'} += $delta_t;
-	$self->{'stats'}->{'skipped_delta_v'} += $delta_v;
+	$stats_ref->{'skipped_delta_t'} += $delta_t;
+	$stats_ref->{'skipped_delta_v'} += $delta_v;
 	$self->_store_last_sample($timestamp, $val);
 	$self->_new_bucket($this_bucket_start);
 	return ($results, $res_ref);
     }
     if ($delta_v < 0) {
-	$self->{'stats'}->{'count_wraps'}++;
+	$stats_ref->{'count_wraps'}++;
 	$self->_store_last_sample($timestamp, $val);
 	$self->_new_bucket($this_bucket_start);
 	return ($results, $res_ref);
     }
-    $self->{'count_samples'}++;
+    $stats_ref->{'count_samples'}++;
     my $this_rate = $delta_v / $delta_t;
     #print "THIS RATE: $this_rate\n";
     if (defined (my $max_rate = $self->{'max_rate'}) &&
 	$rate > $max_rate) {
-	$self->{'stats'}->{'count_rate_too_large'}++;
+	$stats_ref->{'count_rate_too_large'}++;
 	$self->_store_last_sample($timestamp, $val);
 	$self->_new_bucket($this_bucket_start);
 	return ($results, $res_ref);
@@ -136,7 +150,7 @@ sub new_count {
 1;
 
 #-----------------------------------------------------------------------
-package CounterProcessing2;
+package CounterProcessing;
 
 # Choices here:
 # 1A: One Object per counter (heavy?)
@@ -150,11 +164,13 @@ sub new {
     my $class = ref($this) || $this;
     my $self = {};
 
+    my %Stats;
     my %defaults = ( 'permit_coverage' => 0.999,
 		     'ignore_zeroes' => 0,
 		     'max_delta_t' => undef,
 		     'max_rate' => undef,
-		     'period' => undef
+		     'period' => undef,
+		     'stats' => \%Stats
 	);
 
     # Copy either a passed-in value or use the defaults hash for initialization
@@ -178,14 +194,37 @@ sub new {
     my %Counters;
     $self->{'counters'} = \%Counters;
 
-    my %Stats;
-    $self->{'stats'} = \%Stats;
-
-
     bless ($self, $class);
     return ($self);
 }
 
+sub get_counter {
+    my $self = shift;
+    my %args = @_;
+    my $name = delete ($args{'name'});
+    if (! defined ($name)) {
+	warn __PACKAGE__ . ": Missing required argument, counter name. May be a string or integer or obejct reference.\n";
+	return (undef);
+    }
+    my $c_ref = $self->{'counters'}->{$name};
+    if (defined ($c_ref)) {
+	# should this perhaps be an error? or trigger a counter reset?
+	return ($c_ref);
+    }
+    my $max_rate = delete($args{'max_rate'}) || $self->{'max_rate'};
+    my $max_delta_t = delete($args{'max_delta_t'}) || $self->{'max_delta_t'};
+    my $permit_coverage = delete($args{'permit_coverage'}) || $self->{'permit_coverage'};
+    my $period = delete($args{'period'}) || $self->{'period'};
+
+    my $c = Counter->new('period'          => $period,
+			 'max_rate'        => $max_rate,
+			 'max_delta_t'     => $max_delta_t,
+			 'permit_coverage' => $permit_coverage,
+			 'stats'           => $self->{'stats'} # combined stats
+	);
+    $self->{'counters'}->{$name} = $c;
+    return ($c);
+}    
 
 
 
