@@ -1,14 +1,14 @@
 package Counter;
-my $C_PERIOD = ;
-my $C_STATS  = ;
-my $C_PERMIT_COVERAGE = ;
-my $C_LAST_T = ;
-my $C_LAST_V = ;
-my $C_BUCKET = ;
-my $C_LAST_BUCKET_START = ;
-my $C_RESULTS = ;
-my $C_MAX_DELTA_T = ;
-my $C_MAX_RATE = ;
+my $C_PERIOD = 0;
+my $C_STATS  = 1;
+my $C_PERMIT_COVERAGE = 2;
+my $C_MAX_DELTA_T = 3;
+my $C_MAX_RATE = 4;
+my $C_LAST_T = 5;
+my $C_LAST_V = 6;
+my $C_BUCKET = 7;
+my $C_LAST_BUCKET_START = 8;
+my $C_RESULTS = 9;
 
 sub new {
     my $this = shift;
