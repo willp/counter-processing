@@ -241,6 +241,14 @@ sub get_counter {
     return ($c);
 }    
 
+sub upcate_counter {
+    my ($self, $name, $timestamp, $value) = @_;
+    my $c = $self->get_counter('name'=>$name);
+    if (! defined ($c)) {
+	return (undef);
+    }
+    return ($c->new_count($timestamp, $value));
+}
 
 
 1;
