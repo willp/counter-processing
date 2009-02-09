@@ -24,8 +24,8 @@ foreach my $d (@data) {
     my ($ret1, $ret2) = $c->new_count ($d_t, $d_v);
     if ($ret1) {
 	print "  Got return val: $ret1,  ret2=$ret2\n";
-#	while ($ret1-- > 0) {
-	while (my ($t, $v) = @{ shift(@{ $ret2 }) }) {
+	while ($ret1-- > 0) {
+	    my ($t, $v) = @{ shift(@{ $ret2 })};
 	    print " POPPED: $t, $v\n";
 	}
     }
