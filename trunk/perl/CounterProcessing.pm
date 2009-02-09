@@ -83,10 +83,11 @@ sub new_count {
 
     my $this_bucket_start = $timestamp - ($timestamp % $period);
 
+    $stats_ref->{'count_samples'}++;
     if (! defined($self->[$C_LAST_T])) {
-	$stats_ref->{'count_samples'}++;
 	$self->[$C_LAST_BUCKET_START] = $this_bucket_start;
 	$self->_store_last_sample($timestamp, $val);
+	$stats_ref->{'count_initialized'}++;
 	return (@results);
     }
     my $delta_t = $timestamp - $self->[$C_LAST_T];
@@ -97,8 +98,9 @@ sub new_count {
     }
     if (defined (my $max_delta_t = $self->[$C_MAX_DELTA_T]) &&
 	$delta_t > $max_delta_t) {
-	$stats_ref->{'skipped_delta_t'} += $delta_t;
-	$stats_ref->{'skipped_delta_v'} += $delta_v;
+	$stats_ref->{'skipped_polls_total_delta_t'} += $delta_t;
+	#$stats_ref->{'skipped_total_delta_v'} += $delta_v;
+	$stats_ref->{'count_skipped_polls_max_delta_t'}++;
 	$self->_store_last_sample($timestamp, $val);
 	$self->_new_bucket($this_bucket_start);
 	return (@results);
@@ -109,12 +111,11 @@ sub new_count {
 	$self->_new_bucket($this_bucket_start);
 	return (@results);
     }
-    $stats_ref->{'count_samples'}++;
     my $this_rate = $delta_v / $delta_t;
     #print "THIS RATE: $this_rate\n";
     if (defined (my $max_rate = $self->[$C_MAX_RATE]) &&
 	$rate > $max_rate) {
-	$stats_ref->{'count_rate_too_large'}++;
+	$stats_ref->{'count_skipped_polls_max_rate'}++;
 	$self->_store_last_sample($timestamp, $val);
 	$self->_new_bucket($this_bucket_start);
 	return ($results, $res_ref);
@@ -138,7 +139,8 @@ sub new_count {
 	if ($sum_percent >= $self->[$C_PERMIT_COVERAGE]) {
 	    $self->_keep_result($self->[$C_LAST_BUCKET_START], $sum);
 	} else {
-	    print "Skipped bucket " . $self->[$C_LAST_BUCKET_START] . " which summed to only " . $sum_percent . " percent\n";
+	    $stats_ref->{'count_skipped_results_coverage_too_low'}++;
+	#    print "Skipped bucket " . $self->[$C_LAST_BUCKET_START] . " which summed to only " . $sum_percent . " percent\n";
 	}
 	$self->_new_bucket($self->[$C_LAST_BUCKET_START] + $period);
 	while ($self->[$C_LAST_BUCKET_START] != $this_bucket_start) {
@@ -241,7 +243,15 @@ sub get_counter {
     return ($c);
 }    
 
-sub upcate_counter {
+sub counter_exists {
+    my ($self, $name) = @_;
+    if (defined ($self->{'counters'}->{$name})) {
+	return (1);
+    }
+    return (0);
+}
+
+sub update_counter {
     my ($self, $name, $timestamp, $value) = @_;
     my $c = $self->get_counter('name'=>$name);
     if (! defined ($c)) {
