@@ -2,32 +2,26 @@ package Counter;
 
 # I'm using an array ref fo rthe base object type to keep memory usage low
 my $C_PERIOD = 0;
-my $C_STATS  = 1;
-my $C_PERMIT_COVERAGE = 2;
-my $C_MAX_DELTA_T = 3;
-my $C_MAX_RATE = 4;
-my $C_LAST_T = 5;
-my $C_LAST_V = 6;
+my $C_PERMIT_COVERAGE = 1;
+my $C_MAX_DELTA_T = 2;
+my $C_MAX_RATE = 3;
+my $C_LAST_T = 4;
+my $C_LAST_V = 5;
+my $C_LAST_BUCKET_START = 6;
 my $C_BUCKET = 7;
-my $C_LAST_BUCKET_START = 8;
-my $C_RESULTS = 9;
+my $C_RESULTS = 8;
 
 sub new {
     my $this = shift;
     my %args = @_;
     my $class = ref($this) || $this;
     my $self = []; # maybe I should use an array reference to lessen memory usage?
-    #my %Stats;
 
     # not much constructor validation here
     $self->[$C_PERIOD] = delete($args{'period'});
     $self->[$C_PERMIT_COVERAGE] = delete($args{'permit_coverage'});
-    if (defined ($args{'stats'})) {
-	$self->[$C_STATS] = delete($args{'stats'});# || \%Stats; # permit inbound hashref
-    } else {
-	my %Stats;
-	$self->[$C_STATS] = \%Stats;
-    }
+    $self->[$C_MAX_DELTA_T] = delete($args{'max_delta_t'});
+    $self->[$C_MAX_RATE] = delete($args{'max_rate'});
 	
     bless ($self, $class);
     return ($self);
@@ -76,10 +70,9 @@ sub results {
 }
 
 sub new_count {
-    my ($self, $timestamp, $val) = @_;
+    my ($self, $timestamp, $val, $stats_ref) = @_;
     my $period = $self->[$C_PERIOD];
     my @results = $self->results();
-    my $stats_ref = $self->[$C_STATS];
 
     my $this_bucket_start = $timestamp - ($timestamp % $period);
 
@@ -234,10 +227,9 @@ sub get_counter {
     my $period = delete($args{'period'}) || $self->{'period'};
 
     my $c = Counter->new('period'          => $period,
-			 'max_rate'        => $max_rate,
-			 'max_delta_t'     => $max_delta_t,
 			 'permit_coverage' => $permit_coverage,
-			 'stats'           => $self->{'stats'} # combined stats
+			 'max_delta_t'     => $max_delta_t,
+			 'max_rate'        => $max_rate
 	);
     $self->{'counters'}->{$name} = $c;
     return ($c);
@@ -257,7 +249,8 @@ sub update_counter {
     if (! defined ($c)) {
 	return (undef);
     }
-    return ($c->new_count($timestamp, $value));
+    my $stats_ref = $self->{'stats'};
+    return ($c->new_count($timestamp, $value, $stats_ref));
 }
 
 
