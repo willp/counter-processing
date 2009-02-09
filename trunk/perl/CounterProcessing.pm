@@ -1,4 +1,6 @@
 package Counter;
+
+# I'm using an array ref fo rthe base object type to keep memory usage low
 my $C_PERIOD = 0;
 my $C_STATS  = 1;
 my $C_PERMIT_COVERAGE = 2;
@@ -14,48 +16,60 @@ sub new {
     my $this = shift;
     my %args = @_;
     my $class = ref($this) || $this;
-    my $self = {}; # maybe I should use an array reference to lessen memory usage?
-    my %Stats;
+    my $self = []; # maybe I should use an array reference to lessen memory usage?
+    #my %Stats;
 
     # not much constructor validation here
-    $self->{'period'} = delete($args{'period'});
-    $self->{'permit_coverage'} = delete($args{'permit_coverage'});
-    $self->{'stats'} = delete($args{'stats'}) || \%Stats; # permit inbound hashref
-
+    $self->[$C_PERIOD] = delete($args{'period'});
+    $self->[$C_PERMIT_COVERAGE] = delete($args{'permit_coverage'});
+    if (defined ($args{'stats'})) {
+	$self->[$C_STATS] = delete($args{'stats'});# || \%Stats; # permit inbound hashref
+    } else {
+	my %Stats;
+	$self->[$C_STATS] = \%Stats;
+    }
+	
     bless ($self, $class);
     return ($self);
 }
 
 sub _store_last_sample {
     my ($self, $timestamp, $val) = @_;
-    $self->{'last_t'} = $timestamp;
-    $self->{'last_v'} = $val;
+    $self->[$C_LAST_T] = $timestamp;
+    $self->[$C_LAST_V] = $val;
 }
 
 sub _new_bucket {
     my ($self, $bucket_start) = @_;
-    $self->{'bucket'} = [];
-    $self->{'last_bucket_start'} = $bucket_start;
+    $self->[$C_BUCKET] = [];
+    $self->[$C_LAST_BUCKET_START] = $bucket_start;
 }
 
 sub _bucket_append {
     my ($self, $rate, $percent) = @_;
     #print "Bucket add: $rate covers " . 100.0*$percent . " percent of interval\n";
-    push (@{ $self->{'bucket'} }, [ $rate, $percent ] );
+    push (@{ $self->[$C_BUCKET] }, [ $rate, $percent ] );
 }
 
 sub _keep_result {
     my ($self, $timestamp, $val) = @_;
-    if (! defined ($self->{'results'})) {
-	$self->{'results'} = [];
+    if (! defined ($self->[$C_RESULTS])) {
+	$self->[$C_RESULTS] = [];
     }
-    push (@{ $self->{'results'} }, [ $timestamp, $val ]);
+    push (@{ $self->[$C_RESULTS] }, [ $timestamp, $val ]);
+}
+
+# return a string that is parsable by from_string() that represents
+# the complete current state of this counter, for persistence
+sub to_string {
+    my ($self) = @_;
+    
 }
 
 sub results {
     my ($self) = @_;
     my $res_ref;
-    if (! defined ($res_ref = $self->{'results'})) {
+    if (! defined ($res_ref = $self->[$C_RESULTS])) {
 	return (0, undef);
     }
     return (scalar (@{ $res_ref }), $res_ref);
@@ -63,42 +77,42 @@ sub results {
 
 sub new_count {
     my ($self, $timestamp, $val) = @_;
-    my $period = $self->{'period'};
-    my ($results, $res_ref) = $self->results();
-    my $stats_ref = $self->{'stats'};
+    my $period = $self->[$C_PERIOD];
+    my @results = $self->results();
+    my $stats_ref = $self->[$C_STATS];
 
     my $this_bucket_start = $timestamp - ($timestamp % $period);
 
-    if (! defined($self->{'last_t'})) {
+    if (! defined($self->[$C_LAST_T])) {
 	$stats_ref->{'count_samples'}++;
-	$self->{'last_bucket_start'} = $this_bucket_start;
+	$self->[$C_LAST_BUCKET_START] = $this_bucket_start;
 	$self->_store_last_sample($timestamp, $val);
-	return ($results, $res_ref);
+	return (@results);
     }
-    my $delta_t = $timestamp - $self->{'last_t'};
-    my $delta_v = $val - $self->{'last_v'};
+    my $delta_t = $timestamp - $self->[$C_LAST_T];
+    my $delta_v = $val - $self->[$C_LAST_V];
     if ($delta_t <= 0) {
 	$stats_ref->{'count_bad_timestamps'}++;
-	return ($results, $res_ref);
+	return (@results);
     }
-    if (defined (my $max_delta_t = $self->{'max_delta_t'}) &&
+    if (defined (my $max_delta_t = $self->[$C_MAX_DELTA_T]) &&
 	$delta_t > $max_delta_t) {
 	$stats_ref->{'skipped_delta_t'} += $delta_t;
 	$stats_ref->{'skipped_delta_v'} += $delta_v;
 	$self->_store_last_sample($timestamp, $val);
 	$self->_new_bucket($this_bucket_start);
-	return ($results, $res_ref);
+	return (@results);
     }
     if ($delta_v < 0) {
 	$stats_ref->{'count_wraps'}++;
 	$self->_store_last_sample($timestamp, $val);
 	$self->_new_bucket($this_bucket_start);
-	return ($results, $res_ref);
+	return (@results);
     }
     $stats_ref->{'count_samples'}++;
     my $this_rate = $delta_v / $delta_t;
     #print "THIS RATE: $this_rate\n";
-    if (defined (my $max_rate = $self->{'max_rate'}) &&
+    if (defined (my $max_rate = $self->[$C_MAX_RATE]) &&
 	$rate > $max_rate) {
 	$stats_ref->{'count_rate_too_large'}++;
 	$self->_store_last_sample($timestamp, $val);
@@ -106,8 +120,8 @@ sub new_count {
 	return ($results, $res_ref);
     }
     # should be a "while" loop here I think... to convert from generator semantics
-    if ($this_bucket_start != $self->{'last_bucket_start'}) {
-	my $overlap = $period - ($self->{'last_t'} - $self->{'last_bucket_start'});
+    if ($this_bucket_start != $self->[$C_LAST_BUCKET_START]) {
+	my $overlap = $period - ($self->[$C_LAST_T] - $self->[$C_LAST_BUCKET_START]);
 	my $bucket_coverage;
 	if ($overlap > 0) {
 	    $bucket_coverage = $overlap / $period;
@@ -115,21 +129,21 @@ sub new_count {
 	}
 	my $sum = 0;
 	my $sum_percent = 0;
-	foreach my $b (@{ $self->{'bucket'} }) {
+	foreach my $b (@{ $self->[$C_BUCKET] }) {
 	    my ($b_val, $b_percent) = @{ $b };
 	    my $weighted_val = $b_val * $b_percent;
 	    $sum += $weighted_val;
 	    $sum_percent += $b_percent;
 	}
-	if ($sum_percent >= $self->{'permit_coverage'}) {
-	    $self->_keep_result ($self->{'last_bucket_start'}, $sum);
+	if ($sum_percent >= $self->[$C_PERMIT_COVERAGE]) {
+	    $self->_keep_result($self->[$C_LAST_BUCKET_START], $sum);
 	} else {
-	    print "Skipped bucket " . $self->{'last_bucket_start'} . " which summed to only " . $sum_percent . " percent\n";
+	    print "Skipped bucket " . $self->[$C_LAST_BUCKET_START] . " which summed to only " . $sum_percent . " percent\n";
 	}
-	$self->_new_bucket($self->{'last_bucket_start'} + $period);
-	while ($self->{'last_bucket_start'} != $this_bucket_start) {
-	    $self->_keep_result ($self->{'last_bucket_start'}, $this_rate);
-	    $self->{'last_bucket_start'} += $period;
+	$self->_new_bucket($self->[$C_LAST_BUCKET_START] + $period);
+	while ($self->[$C_LAST_BUCKET_START] != $this_bucket_start) {
+	    $self->_keep_result ($self->[$C_LAST_BUCKET_START], $this_rate);
+	    $self->[$C_LAST_BUCKET_START] += $period;
 	}
 	$overlap = $timestamp - $this_bucket_start;
 	if ($overlap > 0) {
@@ -139,8 +153,9 @@ sub new_count {
 	$self->_store_last_sample($timestamp, $val);
 	return ($self->results());
     }
-    if ($this_bucket_start == $self->{'last_bucket_start'}) {
-	my $bucket_coverage = ($timestamp - $self->{'last_t'}) / $period;
+
+    if ($this_bucket_start == $self->[$C_LAST_BUCKET_START]) {
+	my $bucket_coverage = ($timestamp - $self->[$C_LAST_T]) / $period;
 	$self->_bucket_append( $this_rate, $bucket_coverage );
     }
     $self->_store_last_sample($timestamp, $val);
