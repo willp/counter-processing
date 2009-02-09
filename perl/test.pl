@@ -22,7 +22,13 @@ foreach my $d (@data) {
     my ($d_t, $d_v) = ($d->[0], $d->[1] );
     print "Submitting ($d_t,$d_v)\n";
     my ($ret1, $ret2) = $c->new_count ($d_t, $d_v);
-    if ($ret1) { print "  Got return val: $ret1,  ret2=$ret2\n"; }
+    if ($ret1) {
+	print "  Got return val: $ret1,  ret2=$ret2\n";
+#	while ($ret1-- > 0) {
+	while (my ($t, $v) = @{ shift(@{ $ret2 }) }) {
+	    print " POPPED: $t, $v\n";
+	}
+    }
 }
 my ($r1, $r2) = $c->results();
 foreach my $d (@{ $r2 }) {
