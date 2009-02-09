@@ -32,19 +32,19 @@ foreach my $d (@{ $r2 }) {
 print "Done\n";
 # [(0, 1.9999999999999998), (60, 2.1428571428571428), (120, 2.8571428571428572), (180, 0.5), (240, 6.1363636363636358), (300, 1.2747474747474747), (360, 1.1757575757575758), (420, 1.2108057317359644), (480, 1.386046511627907), (540, 1.386046511627907), (600, 1.386046511627907), (660, 1.386046511627907), (720, 1.386046511627907), (780, 1.386046511627907), (840, 1.386046511627907)]
 
-
-# Next, check out the memory usage for 1,000,000 counter objects.
-# 3.91549 KB per object (hashes based)
-# converting to array based..
+# Next, check out the memory usage for 2,000,000 counter objects.
+# uninitialized object sizes...
+# 263 bytes per object when counter are hashrefs
+# 210 bytes per object w/ arrayrefs. 20.2% smaller with arrayrefs. worthwhile IMHO
 print "BEFORE making a million counters:\n";
 show_mem();
 my $x=0;
-while ($x++ < 1000000) {
-    my $c = $cp->get_counter('name'=>$x);
+while ($x++ < 2000000) {
+    my $c = $cp->get_counter('name' => $x);
+    #$c->new_count ( 0, $x );
     if ($x % 100000 == 0) { print "  building (x=$x) "; show_mem(); }
 }
 print "AFTER:\n";
-sleep (5);
 show_mem();
 exit(0);
 
