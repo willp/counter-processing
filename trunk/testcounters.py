@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import random
 
 __version__ = "$Revision: 0 $"
