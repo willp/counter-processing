@@ -22,6 +22,7 @@ foreach my $d (@data) {
     my ($d_t, $d_v) = ($d->[0], $d->[1] );
     print "Submitting ($d_t,$d_v)\n";
     my ($ret1, $ret2) = $c->new_count ($d_t, $d_v);
+    print "\nSerialized c: " . $c->to_string() . "\n\n";
     if ($ret1) {
 	print "  Got return val: $ret1,  ret2=$ret2\n";
 	while ($ret1-- > 0) {
@@ -30,6 +31,7 @@ foreach my $d (@data) {
 	}
     }
 }
+print "\nSerialized c: " . $c->to_string() . "\n\n";
 my ($r1, $r2) = $c->results();
 foreach my $d (@{ $r2 }) {
     print join (", ", @{ $d }) . "\n";
@@ -42,10 +44,11 @@ print "Done\n";
 # uninitialized object sizes...
 # 263 bytes per object when counter are hashrefs
 # 210 bytes per object w/ arrayrefs. 20.2% smaller with arrayrefs. worthwhile IMHO
+exit(0);
 print "BEFORE making a million counters:\n";
 show_mem();
 my $x=0;
-while ($x++ < 2000000) {
+while ($x++ < 1000000) {
     my $c = $cp->get_counter('name' => $x);
     #$c->new_count ( 0, $x );
     if ($x % 100000 == 0) { print "  building (x=$x) "; show_mem(); }

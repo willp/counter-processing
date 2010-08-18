@@ -15,7 +15,7 @@ sub new {
     my $this = shift;
     my %args = @_;
     my $class = ref($this) || $this;
-    my $self = []; # maybe I should use an array reference to lessen memory usage?
+    my $self = []; # using an array reference to lessen memory usage
 
     # not much constructor validation here
     $self->[$C_PERIOD] = delete($args{'period'});
@@ -23,6 +23,36 @@ sub new {
     $self->[$C_MAX_DELTA_T] = delete($args{'max_delta_t'});
     $self->[$C_MAX_RATE] = delete($args{'max_rate'});
 	
+    bless ($self, $class);
+    return ($self);
+}
+
+# parse a serialized counter and return a new Counter object initialized
+# to the frozen state
+sub from_string {
+    my $this = shift;
+    my ($str) = @_;
+    my $class = ref($this) || $this;
+    my $self = [];
+
+    my @outer = split (/^/, $str);
+    my ($init, $bucket_str, $results_str) = @outer;
+    my @parts = split(/\,/, $init);
+
+    # not much validation here
+    # copy the scalar values first
+    my $i = 0;
+    while ($i <= $C_LAST_BUCKET_START) {
+      my $val = $parts[$i];
+      if ($val eq "") { $val = undef; }
+      $self->[$i] = $val;
+      $i++;
+    }
+    # then process the bucket and the results lists
+    my @bucket_list = split(/,/, $bucket_str);
+    my @results_list = split(/,/, $results_str);
+    # TODO: finish this
+
     bless ($self, $class);
     return ($self);
 }
@@ -55,9 +85,34 @@ sub _keep_result {
 
 # return a string that is parsable by from_string() that represents
 # the complete current state of this counter, for persistence
+# Serialized c: 60,0.999,,^2.36363636363636/0.0833333333333333^240/6.13636363636364
 sub to_string {
-    my ($self) = @_;
-    
+  my ($self) = @_;
+
+  my $init = join (',',
+		   $self->[$C_PERIOD],
+		   $self->[$C_PERMIT_COVERAGE],
+		   $self->[$C_MAX_DELTA_T] || '',
+		   $self->[$C_MAX_RATE] || '');
+  my $last_t = $self->[$C_LAST_T] || '';
+  my $last_v = $self->[$C_LAST_V] || '';
+  my $last_bucket_start = $self->[$C_LAST_BUCKET_START] || '';
+  my $bucket_ref = $self->[$C_BUCKET];
+  my @_blist = ();
+  foreach my $item (@{ $bucket_ref }) {
+    my ($a, $b) = @{ $item };
+    push (@_blist, "$a/$b");
+  }
+  my $bucket = join (',', @_blist);
+  my $results_ref = $self->[$C_RESULTS];
+  my @_reslist = ();
+  foreach my $item (@{ $results_ref }) {
+    my ($a, $b) = @{ $item };
+    push (@_reslist, "$a/$b");
+  }
+  my $results = join (',', @_reslist);
+  my $str = join ('^', $init, $bucket, $results);
+  return ($str);
 }
 
 sub results {
