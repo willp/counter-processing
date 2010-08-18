@@ -128,7 +128,7 @@ class Counter(object):
                 yield (self.last_bucket_start,  sum)
             else:
                 dprint("ERROR: Skipped bucket [[%d]] which summed only to %.3f%%!",  (self.last_bucket_start,  sum_percent))
-            # advance forward one bucket...
+            # advance to next bucket
             self._new_bucket(self.last_bucket_start + period)
             while self.last_bucket_start != this_bucket_start:
                 # generate rates for intermediate missing buckets
