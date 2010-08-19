@@ -48,17 +48,21 @@ print "Done\n";
 # uninitialized object sizes...
 # 263 bytes per object when counter are hashrefs
 # 210 bytes per object w/ arrayrefs. 20.2% smaller with arrayrefs. worthwhile IMHO
-exit(0);
-print "BEFORE making a million counters:\n";
+#exit(0);
+print "BEFORE making a zillion counters:\n";
 show_mem();
 my $x=0;
-while ($x++ < 1000000) {
-    my $c = $cp->get_counter('name' => $x);
-    #$c->new_count ( 0, $x );
-    if ($x % 100000 == 0) { print "  building (x=$x) "; show_mem(); }
+my $max = 10000;
+while ($x++ < $max) {
+    my $c = $cp->get_counter('name' => "counter_$x");
+    $c->new_count ( 0, $x );
+    $c->new_count ( 120, $x*2 );
+    if ($x % ($max/20) == 0) { print "  building (x=$x) "; show_mem(); }
 }
 print "AFTER:\n";
 show_mem();
+print "Persistence:\n";
+print $cp->to_filedesc(STDOUT);
 exit(0);
 
 sub show_mem {

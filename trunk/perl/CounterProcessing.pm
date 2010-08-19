@@ -1,6 +1,6 @@
 package Counter;
 
-# I'm using an array ref fo rthe base object type to keep memory usage low
+# I'm using an array ref for the base object type to keep memory usage low
 my $C_PERIOD = 0;
 my $C_PERMIT_COVERAGE = 1;
 my $C_MAX_DELTA_T = 2;
@@ -8,8 +8,8 @@ my $C_MAX_RATE = 3;
 my $C_LAST_T = 4;
 my $C_LAST_V = 5;
 my $C_LAST_BUCKET_START = 6;
-my $C_BUCKET = 7;
-my $C_RESULTS = 8;
+my $C_BUCKET = 7; # listref
+my $C_RESULTS = 8; # listref
 
 sub new {
   my $this = shift;
@@ -45,6 +45,7 @@ sub from_string {
     my $val = $parts[$i];
     #if ($val eq "") { $val = undef; }
     $self->[$i] = $val;
+    if (defined($val)) { print "  storing $val in index $i\n"; }
     $i++;
   }
   # then process the bucket and the results lists
@@ -99,14 +100,15 @@ sub _keep_result {
 sub to_string {
   my ($self) = @_;
 
+  my $last_t = $self->[$C_LAST_T] || '';
+  my $last_v = $self->[$C_LAST_V] || '';
+  my $last_bucket_start = $self->[$C_LAST_BUCKET_START] || '';
   my $init = join (',',
 		   $self->[$C_PERIOD],
 		   $self->[$C_PERMIT_COVERAGE],
 		   $self->[$C_MAX_DELTA_T] || '',
-		   $self->[$C_MAX_RATE] || '');
-  my $last_t = $self->[$C_LAST_T] || '';
-  my $last_v = $self->[$C_LAST_V] || '';
-  my $last_bucket_start = $self->[$C_LAST_BUCKET_START] || '';
+		   $self->[$C_MAX_RATE] || '',
+		   $last_t, $last_v, $last_bucket_start);
   my $bucket_ref = $self->[$C_BUCKET];
   my @_blist = ();
   foreach my $item (@{ $bucket_ref }) {
@@ -323,5 +325,14 @@ sub update_counter {
   return ($c->new_count($timestamp, $value, $stats_ref));
 }
 
+sub to_filedesc {
+  my ($self, $fh) = @_;
+  my @counters;
+  foreach my $name (sort keys %{ $self->{'counters'} }) {
+    my $cref = $self->{'counters'}->{$name};
+    my $serial = $cref->to_string();
+    print $fh "$name>>$serial\n";
+  }
+}
 
 1;
