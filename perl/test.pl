@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w -I.
 use CounterProcessing; $|=1; print "\n" x 10;
-my $cp = CounterProcessing->new('period'=>60, 'permit_coverage'=>0.999);
+my $cp = CounterProcessing->new('period'=>60,
+				'permit_coverage'=>0.999,
+				'max_delta_t' => 1800,
+				'max_rate' => 5*10^9);
 my $c = $cp->get_counter('name' => 'test'); # ? 'period' => 60, 'permit_coverage' => 0.999);
 #my $c = Counter->new('period' => 60, 'permit_coverage' => 0.999);
 my @data = (
@@ -57,6 +60,7 @@ while ($x++ < $max) {
     my $c = $cp->get_counter('name' => "counter_$x");
     $c->new_count ( 0, $x );
     $c->new_count ( 120, $x*2 );
+    $c->new_count ( 190, $x*3 );
     if ($x % ($max/20) == 0) { print "  building (x=$x) "; show_mem(); }
 }
 print "AFTER:\n";

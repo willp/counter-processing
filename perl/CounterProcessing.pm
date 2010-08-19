@@ -100,15 +100,15 @@ sub _keep_result {
 sub to_string {
   my ($self) = @_;
 
-  my $last_t = $self->[$C_LAST_T] || '';
-  my $last_v = $self->[$C_LAST_V] || '';
-  my $last_bucket_start = $self->[$C_LAST_BUCKET_START] || '';
   my $init = join (',',
 		   $self->[$C_PERIOD],
 		   $self->[$C_PERMIT_COVERAGE],
 		   $self->[$C_MAX_DELTA_T] || '',
 		   $self->[$C_MAX_RATE] || '',
-		   $last_t, $last_v, $last_bucket_start);
+		   $self->[$C_LAST_T] || '',
+		   $self->[$C_LAST_V] || '',
+		   $self->[$C_LAST_BUCKET_START] || '');
+  # serialize bucket
   my $bucket_ref = $self->[$C_BUCKET];
   my @_blist = ();
   foreach my $item (@{ $bucket_ref }) {
@@ -116,6 +116,7 @@ sub to_string {
     push (@_blist, "$a/$b");
   }
   my $bucket = join (',', @_blist);
+  # serialize results
   my $results_ref = $self->[$C_RESULTS];
   my @_reslist = ();
   foreach my $item (@{ $results_ref }) {
@@ -156,7 +157,8 @@ sub new_count {
     $stats_ref->{'count_bad_timestamps'}++;
     return (@results);
   }
-  if (defined (my $max_delta_t = $self->[$C_MAX_DELTA_T]) &&
+  my $max_delta_t = $self->[$C_MAX_DELTA_T];
+  if (defined ($max_delta_t) &&
       $delta_t > $max_delta_t) {
     $stats_ref->{'skipped_polls_total_delta_t'} += $delta_t;
     #$stats_ref->{'skipped_total_delta_v'} += $delta_v;
@@ -173,8 +175,9 @@ sub new_count {
   }
   my $this_rate = $delta_v / $delta_t;
   #print "THIS RATE: $this_rate\n";
-  if (defined (my $max_rate = $self->[$C_MAX_RATE]) &&
-      $rate > $max_rate) {
+  my $max_rate = $self->[$C_MAX_RATE];
+  if (defined ($max_rate) &&
+      $this_rate > $max_rate) {
     $stats_ref->{'count_skipped_polls_max_rate'}++;
     $self->_store_last_sample($timestamp, $val);
     $self->_new_bucket($this_bucket_start);
