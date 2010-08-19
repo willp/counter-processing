@@ -35,8 +35,7 @@ sub from_string {
     my $class = ref($this) || $this;
     my $self = [];
 
-    my @outer = split (/^/, $str);
-    my ($init, $bucket_str, $results_str) = @outer;
+    my ($init, $bucket_str, $results_str) = split(/\^/, $str);
     my @parts = split(/\,/, $init);
 
     # not much validation here
@@ -44,14 +43,26 @@ sub from_string {
     my $i = 0;
     while ($i <= $C_LAST_BUCKET_START) {
       my $val = $parts[$i];
-      if ($val eq "") { $val = undef; }
+      #if ($val eq "") { $val = undef; }
       $self->[$i] = $val;
       $i++;
     }
     # then process the bucket and the results lists
-    my @bucket_list = split(/,/, $bucket_str);
-    my @results_list = split(/,/, $results_str);
     # TODO: finish this
+    # bucket
+    $self->[$C_BUCKET] = [];
+    my @bucket_list  = split(/,/, $bucket_str);
+    foreach my $item (@bucket_list) {
+      my ($a, $b) = split (/\//, $item);
+      push (@{ $self->[$C_BUCKET] }, [ $a, $b ] );
+    }
+    # results
+    $self->[$C_RESULTS] = [];
+    my @results_list = split(/,/, $results_str);
+    foreach my $item (@results_list) {
+      my ($a, $b) = split (/\//, $item);
+      push (@{ $self->[$C_RESULTS] }, [ $a, $b ] );
+    }
 
     bless ($self, $class);
     return ($self);
@@ -288,7 +299,12 @@ sub get_counter {
 	);
     $self->{'counters'}->{$name} = $c;
     return ($c);
-}    
+}
+
+sub load_counter {
+  my ($self, $name, $counter) = @_;
+  $self->{'counters'}->{$name} = $counter;
+}
 
 sub counter_exists {
     my ($self, $name) = @_;
