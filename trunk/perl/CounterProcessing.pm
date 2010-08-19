@@ -142,7 +142,8 @@ sub new_count {
   my $period = $self->[$C_PERIOD];
   my @results = $self->results();
 
-  my $this_bucket_start = $timestamp - ($timestamp % $period);
+  my $int_timestamp = int($timestamp);
+  my $this_bucket_start = $int_timestamp - ($int_timestamp % $period);
 
   $stats_ref->{'count_samples'}++;
   if (! defined($self->[$C_LAST_T])) {
