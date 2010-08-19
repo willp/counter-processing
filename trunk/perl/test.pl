@@ -22,7 +22,11 @@ foreach my $d (@data) {
     my ($d_t, $d_v) = ($d->[0], $d->[1] );
     print "Submitting ($d_t,$d_v)\n";
     my ($ret1, $ret2) = $c->new_count ($d_t, $d_v);
-    print "\nSerialized c: " . $c->to_string() . "\n\n";
+    my $serial = $c->to_string();
+    print "\nSerialized c: $serial\n\n";
+    my $new_c = Counter->from_string($serial);
+#    print "reloading into new counter: " . $new_c->to_string() . "\n";
+    $cp->load_counter("test", $new_c);
     if ($ret1) {
 	print "  Got return val: $ret1,  ret2=$ret2\n";
 	while ($ret1-- > 0) {
