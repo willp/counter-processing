@@ -275,30 +275,30 @@ sub new {
 }
 
 sub get_counter {
-    my $self = shift;
-    my %args = @_;
-    my $name = delete ($args{'name'});
-    if (! defined ($name)) {
-	warn __PACKAGE__ . ": Missing required argument, counter name. May be a string or integer or obejct reference.\n";
-	return (undef);
-    }
-    my $c_ref = $self->{'counters'}->{$name};
-    if (defined ($c_ref)) {
-	# should this perhaps be an error? or trigger a counter reset?
-	return ($c_ref);
-    }
-    my $max_rate = delete($args{'max_rate'}) || $self->{'max_rate'};
-    my $max_delta_t = delete($args{'max_delta_t'}) || $self->{'max_delta_t'};
-    my $permit_coverage = delete($args{'permit_coverage'}) || $self->{'permit_coverage'};
-    my $period = delete($args{'period'}) || $self->{'period'};
+  my $self = shift;
+  my %args = @_;
+  my $name = delete ($args{'name'});
+  if (! defined ($name)) {
+    warn __PACKAGE__ . ": Missing required argument, counter name. May be a string or integer or obejct reference.\n";
+    return (undef);
+  }
+  my $c_ref = $self->{'counters'}->{$name};
+  if (defined ($c_ref)) {
+    # should this perhaps be an error? or trigger a counter reset?
+    return ($c_ref);
+  }
+  my $max_rate = delete($args{'max_rate'}) || $self->{'max_rate'};
+  my $max_delta_t = delete($args{'max_delta_t'}) || $self->{'max_delta_t'};
+  my $permit_coverage = delete($args{'permit_coverage'}) || $self->{'permit_coverage'};
+  my $period = delete($args{'period'}) || $self->{'period'};
 
-    my $c = Counter->new('period'          => $period,
-			 'permit_coverage' => $permit_coverage,
-			 'max_delta_t'     => $max_delta_t,
-			 'max_rate'        => $max_rate
-	);
-    $self->{'counters'}->{$name} = $c;
-    return ($c);
+  my $c = Counter->new('period'          => $period,
+		       'permit_coverage' => $permit_coverage,
+		       'max_delta_t'     => $max_delta_t,
+		       'max_rate'        => $max_rate
+		      );
+  $self->{'counters'}->{$name} = $c;
+  return ($c);
 }
 
 sub load_counter {
