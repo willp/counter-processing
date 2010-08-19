@@ -60,7 +60,7 @@ while ($x++ < $max) {
     my $c = $cp->get_counter('name' => "counter_$x");
     $c->new_count ( 0, $x );
     $c->new_count ( 120, $x*2 );
-    $c->new_count ( 190, $x*3 );
+    $c->new_count ( 239.5, $x*3 );
     if ($x % ($max/20) == 0) { print "  building (x=$x) "; show_mem(); }
 }
 print "AFTER:\n";
@@ -70,5 +70,6 @@ print $cp->to_filedesc(STDOUT);
 exit(0);
 
 sub show_mem {
-    system ("grep VmRSS /proc/$$/status");
-}    
+  # cheesy
+  system ("grep VmRSS /proc/$$/status");
+}
