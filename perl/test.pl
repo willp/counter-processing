@@ -74,8 +74,8 @@ while ($x++ < $max) {
   my $wrap_val = 2**32 * 8;
     my $c = $cp->get_counter('name' => "counter_$x",
 			     'period' => 300,
-			     'unwrap32_max_rate' => 100*1000*1000,
-			     'unwrap32_wrap_val' => $wrap_val
+			     'unwrap_max_rate' => 100*1000*1000,
+			     'unwrap_wrap_val' => $wrap_val
 			    );
     $c->new_count ( 0, $x );
     $c->new_count ( 120, $x*2 );

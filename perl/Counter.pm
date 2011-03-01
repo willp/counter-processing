@@ -10,9 +10,9 @@ my $C_LAST_V = 5;
 my $C_LAST_BUCKET_START = 6;
 my $C_BUCKET = 7; # listref
 my $C_RESULTS = 8; # listref
-my $C_UNWRAP32_MAX_RATE = 9;
-my $C_UNWRAP32_WRAP_T = 10;
-my $C_UNWRAP32_WRAP_VAL = 11;
+my $C_UNWRAP_MAX_RATE = 9;
+my $C_UNWRAP_WRAP_T = 10;
+my $C_UNWRAP_WRAP_VAL = 11;
 my $C_STATS_REF = 12;
 
 sub new {
@@ -27,9 +27,9 @@ sub new {
   $self->[$C_MAX_DELTA_T] = delete($args{'max_delta_t'});
   $self->[$C_MAX_RATE] = delete($args{'max_rate'});
 
-  $self->[$C_UNWRAP32_MAX_RATE] = delete($args{'unwrap32_max_rate'});
-  $self->[$C_UNWRAP32_WRAP_T] = delete($args{'unwrap32_wrap_t'});
-  $self->[$C_UNWRAP32_WRAP_VAL] = delete($args{'unwrap32_wrap_val'});
+  $self->[$C_UNWRAP_MAX_RATE] = delete($args{'unwrap_max_rate'});
+  $self->[$C_UNWRAP_WRAP_T] = delete($args{'unwrap_wrap_t'});
+  $self->[$C_UNWRAP_WRAP_VAL] = delete($args{'unwrap_wrap_val'});
   $self->[$C_STATS_REF] = delete($args{'stats_ref'});
 
   bless ($self, $class);
@@ -191,17 +191,17 @@ sub new_count {
   # handle counter wraps and resets (counter appears to go negative)
   if ($delta_v < 0) {
     $stats_ref->{'count_wraps'}++;
-    # if no unwrap32 defined, then just reset the counter
-    if (!$self->[$C_UNWRAP32_MAX_RATE]) {
+    # if no unwrap defined, then just reset the counter
+    if (!$self->[$C_UNWRAP_MAX_RATE]) {
       # TODO: refactor
       $self->_store_last_sample($timestamp, $val);
       $self->_new_bucket($this_bucket_start);
       return (@results);
     }
     # otherwise we want to unwrap, but test delta_t against wrap_t
-    if ($delta_t > $self->[$C_UNWRAP32_WRAP_T]) {
+    if ($delta_t > $self->[$C_UNWRAP_WRAP_T]) {
       $stats_ref->{'count_unwrap_failed_double_wrap'}++;
-      print STDERR "Failed: delta_t is $delta_t which double wraps with wrap_t of " . $self->[$C_UNWRAP32_WRAP_T] . "\n";
+      print STDERR "Failed: delta_t is $delta_t which double wraps with wrap_t of " . $self->[$C_UNWRAP_WRAP_T] . "\n";
       # TODO: refactor
       $self->_store_last_sample($timestamp, $val);
       $self->_new_bucket($this_bucket_start);
@@ -209,15 +209,15 @@ sub new_count {
     }
     # otherwise, we will try to unwrap the counter
     # add the value lost due to wrap
-    if (defined ($self->[$C_UNWRAP32_WRAP_VAL])) {
-      $delta_v += $self->[$C_UNWRAP32_WRAP_VAL];
+    if (defined ($self->[$C_UNWRAP_WRAP_VAL])) {
+      $delta_v += $self->[$C_UNWRAP_WRAP_VAL];
     } else {
       $delta_v += 4294967295;
     }
     my $test_rate = $delta_v / $delta_t;
-    my $test_percent = $test_rate / $self->[$C_UNWRAP32_MAX_RATE] * 100.0;
+    my $test_percent = $test_rate / $self->[$C_UNWRAP_MAX_RATE] * 100.0;
     if ($test_percent > 103 || $test_rate < 0) {
-      print STDERR "Failed: test_percent=$test_percent, (delta_v=$delta_v, delta_t=$delta_t) test_rate=$test_rate, unwrap max rate: " . $self->[$C_UNWRAP32_MAX_RATE] . "\n";
+      print STDERR "Failed: test_percent=$test_percent, (delta_v=$delta_v, delta_t=$delta_t) test_rate=$test_rate, unwrap max rate: " . $self->[$C_UNWRAP_MAX_RATE] . "\n";
       $stats_ref->{'count_unwrap_failed_max_rate'}++;
       # TODO: refactor
       $self->_store_last_sample($timestamp, $val);
