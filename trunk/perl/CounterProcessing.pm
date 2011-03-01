@@ -1,5 +1,6 @@
-package CounterProcessing;
+use Counter;
 
+package CounterProcessing;
 sub new {
   my $this = shift;
   my %args = @_;
