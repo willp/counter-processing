@@ -1,19 +1,18 @@
 use Counter;
 
 package CounterProcessing;
+
 sub new {
   my $this = shift;
   my %args = @_;
   my $class = ref($this) || $this;
   my $self = {};
 
-  my %Stats;
   my %defaults = ( 'permit_coverage' => 0.999,
 		   'ignore_zeroes' => 0,
 		   'max_delta_t' => undef,
 		   'max_rate' => undef,
-		   'period' => undef,
-		   'stats' => \%Stats
+		   'period' => undef
 		 );
 
   # Copy either a passed-in value or use the defaults hash for initialization
@@ -36,6 +35,8 @@ sub new {
 
   my %Counters;
   $self->{'counters'} = \%Counters;
+  my %Stats;
+  $self->{'stats'} = \%Stats;
 
   bless ($self, $class);
   return ($self);
@@ -70,6 +71,7 @@ sub get_counter {
 		       'permit_coverage' => $permit_coverage,
 		       'max_delta_t'     => $max_delta_t,
 		       'max_rate'        => $max_rate,
+		       'stats_ref'       => $self->{'stats'},
 		       # counter unwrapping parameters here
 		       'unwrap32_max_rate' => $unwrap32_max_rate,
 		       'unwrap32_wrap_t'   => $wrap_t
@@ -97,8 +99,7 @@ sub update_counter {
   if (! defined ($c)) {
     return (undef);
   }
-  my $stats_ref = $self->{'stats'};
-  return ($c->new_count($timestamp, $value, $stats_ref));
+  return ($c->new_count($timestamp, $value));
 }
 
 sub to_filedesc {

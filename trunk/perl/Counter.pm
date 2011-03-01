@@ -12,6 +12,7 @@ my $C_BUCKET = 7; # listref
 my $C_RESULTS = 8; # listref
 my $C_UNWRAP32_MAX_RATE = 9;
 my $C_UNWRAP32_WRAP_T = 10;
+my $C_STATS_REF = 11;
 
 sub new {
   my $this = shift;
@@ -27,6 +28,7 @@ sub new {
 
   $self->[$C_UNWRAP32_MAX_RATE] = delete($args{'unwrap32_max_rate'});
   $self->[$C_UNWRAP32_WRAP_T] = delete($args{'unwrap32_wrap_t'});
+  $self->[$C_STATS_REF] = delete($args{'stats_ref'});
 
   bless ($self, $class);
   return ($self);
@@ -143,12 +145,18 @@ sub results {
 }
 
 sub new_count {
-  my ($self, $timestamp, $val, $stats_ref) = @_;
+  my ($self, $timestamp, $val) = @_;
   my $period = $self->[$C_PERIOD];
   my @results = $self->results();
 
   my $int_timestamp = int($timestamp);
   my $this_bucket_start = $int_timestamp - ($int_timestamp % $period);
+
+  my $stats_ref = $self->[$C_STATS_REF];
+  if (! defined ($stats_ref) ) {
+    my %local_stats;
+    $stats_ref = \%local_stats;
+  }
 
   $stats_ref->{'count_samples'}++;
   # handle initialization
@@ -210,6 +218,7 @@ sub new_count {
     # otherwise, the value is good
     # allow $delta_v to pass through with its new unwrapped value
     $stats_ref->{'count_unwrap_okay'}++;
+    #print STDERR "Unwrapped counter at $timestamp $val, rate = $test_rate\n";
   }
   my $this_rate = $delta_v / $delta_t;
   #print "THIS RATE: $this_rate\n";
