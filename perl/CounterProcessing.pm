@@ -61,10 +61,17 @@ sub get_counter {
 
   # unwrap 32 bit counter parameters here
   my $unwrap32_max_rate = delete($args{'unwrap32_max_rate'}) || 0;
+  my $unwrap32_wrap_val = delete($args{'unwrap32_wrap_val'}) || undef;
   my $wrap_t = undef;
   if ($unwrap32_max_rate) {
     # compute wrap_t, once per counter
-    $wrap_t = (2**32) / $unwrap32_max_rate;
+    my $wrap_at = 2**32;
+    if (defined ($unwrap32_wrap_val)) {
+      $wrap_val = $unwrap32_wrap_val;
+      print "wrap_val= $wrap_val\n";
+    }
+    $wrap_t = $wrap_val / $unwrap32_max_rate;
+    print "wrap_t= $wrap_t\n";
   }
 
   my $c = Counter->new('period'          => $period,
@@ -74,7 +81,8 @@ sub get_counter {
 		       'stats_ref'       => $self->{'stats'},
 		       # counter unwrapping parameters here
 		       'unwrap32_max_rate' => $unwrap32_max_rate,
-		       'unwrap32_wrap_t'   => $wrap_t
+		       'unwrap32_wrap_t'   => $wrap_t,
+		       'unwrap32_wrap_val' => $unwrap32_wrap_val
 		      );
   $self->{'counters'}->{$name} = $c if (defined ($c));
   return ($c);
